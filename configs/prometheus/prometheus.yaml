@@ -1,0 +1,29 @@
+- job_name: 'web'
+    kubernetes_sd_configs:
+    - role: service
+    relabel_configs:
+    - source_labels: [__meta_kubernetes_service_label_app]
+      regex: apache
+      action: keep
+    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+      target_label: __scrape
+    - source_labels: [__scrape]
+      target_label: __scrape
+    - target_label: __address__
+      replacement: kubernetes.default.svc:9100
+    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+      target_label: __scheme__
+    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+      target_label: __metrics_path__
+    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_port]
+      target_label: __service_port__
+  - job_name: 'node'
+    kubernetes_sd_configs:
+    - role: node
+    relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: kubernetes.default.svc:9100
