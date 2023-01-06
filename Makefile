@@ -30,25 +30,17 @@ directories:
 files: directories
 	@echo "=======================\nCopiando arquivos\n=======================\n"
 	@echo "Copiando 'config/prometheus/*' -> 'container/prometheus/'"
+	cp -R configs/prometheus container/prometheus/
 	@echo "Copiando 'config/web/*' -> 'container/web/'"
-	cp -R configs/prometheus/ container/prometheus/
-	cp -R configs/web/ container/web/
+	cp -R configs/web container/web/
 	@echo "-----------------------------\nArquivos copiados com sucesso...\n-----------------------------\n"
 
-init_cluster: check_k8s
-	@echo "=======================\nIniciando cluster\n=======================\n";
-	@echo "Criando Pod web1"
-	kubectl apply -f pods/pod1-apache.yaml
-	@echo "Criando Pod web2\n"
-	kubectl apply -f pods/pod2-apache.yaml
-	@echo "Iniciando Service pod-web1"
-	kubectl apply -f services/pods-services/service-pod-web1.yaml
-	@echo "Iniciando Service pod-web2\n"
-	kubectl apply -f services/pods-services/service-pod-web2.yaml
-	@echo "Criando Pod monitoramento\n"
-	kubectl apply -f pods/pilha-monitoramento.yaml
-	@echo "Iniciando Service prometheus"
-	kubectl apply -f services/pods-services/service-prometheus.yaml
-	@echo "Iniciando Service grafana\n"
-	kubectl apply -f services/pods-services/service-grafana.yaml
-	@echo "-----------------------------\nCluster iniciado com sucesso...\n-----------------------------\n"
+init_cluster: check_k8s check_and_disable_swap
+	@echo "=======================\nPronto para iniciar cluster\n=======================\n";
+	
+check_and_disable_swap:
+	# Verifica se a memória swap está ativa
+	@if grep -q "^[^#]" /etc/fstab; then \
+		# Desativa a memória swap \
+		sudo swapoff -a \
+	fi
