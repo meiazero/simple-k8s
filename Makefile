@@ -16,6 +16,8 @@ check_k8s:
 		echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list && \
 		curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add - && \
 		sudo apt update && sudo apt install -y kubectl kubeadm kubelet; \
+		sudo rm /etc/containerd/config.toml; \
+		sudo systemctl restart containerd ; \
 	else \
 		echo "Kubernetes está instalado\n"; \
 	fi
