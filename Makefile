@@ -13,9 +13,9 @@ check_k8s:
 	@echo "=======================\nVerificando Kubernetes\n=======================\n";
 	@if test ! -x "$(shell which kubectl)"; then \
 		echo "\n\tKubernetes não encontrado. Instalando Kubernetes...\n"; \
-		echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" | tee /etc/apt/sources.list.d/kubernetes.list && \
-		curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
-		sudo apt update && sudo apt install -y kubectl kubeamd kubelet; \
+		echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list && \
+		curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add - && \
+		sudo apt update && sudo apt install -y kubectl kubeadm kubelet; \
 	else \
 		echo "Kubernetes está instalado\n"; \
 	fi
@@ -29,18 +29,19 @@ directories:
 
 files: directories
 	@echo "=======================\nCopiando arquivos\n=======================\n"
-	@echo "Copiando 'config/prometheus/*' -> 'container/prometheus/'"
-	cp -R configs/prometheus container/prometheus/
-	@echo "Copiando 'config/web/*' -> 'container/web/'"
-	cp -R configs/web container/web/
+	@echo "Copiando 'config/prometheus/*' -> '/home/$(shell whoami)/container/prometheus/'"
+	cp -R configs/prometheus /home/$(shell whoami)/container/
+	@echo "Copiando 'config/web/*' -> '/home/$(shell whoami)/container/web/'"
+	cp -R configs/web /home/$(shell whoami)/container/
 	@echo "-----------------------------\nArquivos copiados com sucesso...\n-----------------------------\n"
+	cp -R pods /home/$(shell whoami)/container/
+	cp -R services /home/$(shell whoami)/container/
 
-init_cluster: check_k8s check_and_disable_swap
+init_cluster: check_k8s check_swap
 	@echo "=======================\nPronto para iniciar cluster\n=======================\n";
 	
-check_and_disable_swap:
-	# Verifica se a memória swap está ativa
+
+check_swap:
 	@if grep -q "^[^#]" /etc/fstab; then \
-		# Desativa a memória swap \
-		sudo swapoff -a \
+		sudo swapoff -a; \
 	fi
