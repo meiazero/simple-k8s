@@ -13,9 +13,10 @@ check_k8s:
 	@echo "=======================\nVerificando Kubernetes\n=======================\n";
 	@if test ! -x "$(shell which kubectl)"; then \
 		echo "\n\tKubernetes não encontrado. Instalando Kubernetes...\n"; \
-		echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list && \
-		curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add - && \
-		sudo apt update && sudo apt install -y kubectl kubeadm kubelet; \
+		sudo apt update && sudo apt install -f -y apt-transport-https ca-certificates curl; \
+		sudo curl -fsSLo /etc/apt/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg; \
+		echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list; \
+		sudo apt update && sudo apt install -y kubectl kubeadm kubelet && sudo apt-mark hold kubeadm kubectl kubelet; \
 		sudo rm /etc/containerd/config.toml; \
 		sudo systemctl restart containerd ; \
 	else \
