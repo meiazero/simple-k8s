@@ -14,11 +14,12 @@ check_k8s:
 	@echo "=======================\nVerificando Kubernetes\n=======================\n";
 	@if test ! -x "$(shell which kubectl)"; then \
 		echo "\n\tKubernetes não encontrado. Instalando Kubernetes...\n"; \
-		sudo curl -fsSLo /etc/apt/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg \
-		echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list \
-		sudo apt-get update \ 
-		sudo apt-get install -y kubelet kubeadm kubectl \
-		sudo apt-mark hold kubelet kubeadm kubectl; \
+		sudo apt update && sudo apt install -f -y apt-transport-https ca-certificates curl; \
+		sudo curl -fsSLo /etc/apt/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg; \
+		echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list; \
+		sudo apt update && sudo apt install -y kubectl kubeadm kubelet && sudo apt-mark hold kubeadm kubectl kubelet; \
+		sudo rm /etc/containerd/config.toml; \
+		sudo systemctl restart containerd ; \
 	else \
 		echo "Kubernetes está instalado\n"; \
 	fi
@@ -32,26 +33,19 @@ directories:
 
 files: directories
 	@echo "=======================\nCopiando arquivos\n=======================\n"
-	@echo "Copiando 'config/prometheus/*' -> 'container/prometheus/'"
-	@echo "Copiando 'config/web/*' -> 'container/web/'"
-	cp -R configs/prometheus/ container/prometheus/
-	cp -R configs/web/ container/web/
+	@echo "Copiando 'config/prometheus/*' -> '/home/$(shell whoami)/container/prometheus/'"
+	cp -R configs/prometheus /home/$(shell whoami)/container/
+	@echo "Copiando 'config/web/*' -> '/home/$(shell whoami)/container/web/'"
+	cp -R configs/web /home/$(shell whoami)/container/
 	@echo "-----------------------------\nArquivos copiados com sucesso...\n-----------------------------\n"
+	cp -R pods /home/$(shell whoami)/container/
+	cp -R services /home/$(shell whoami)/container/
 
-init_cluster: check_k8s
-	@echo "=======================\nIniciando cluster\n=======================\n";
-	@echo "Criando Pod web1"
-	kubectl apply -f pods/pod1-apache.yaml
-	@echo "Criando Pod web2\n"
-	kubectl apply -f pods/pod2-apache.yaml
-	@echo "Iniciando Service pod-web1"
-	kubectl apply -f services/pods-services/service-pod-web1.yaml
-	@echo "Iniciando Service pod-web2\n"
-	kubectl apply -f services/pods-services/service-pod-web2.yaml
-	@echo "Criando Pod monitoramento\n"
-	kubectl apply -f pods/pilha-monitoramento.yaml
-	@echo "Iniciando Service prometheus"
-	kubectl apply -f services/pods-services/service-prometheus.yaml
-	@echo "Iniciando Service grafana\n"
-	kubectl apply -f services/pods-services/service-grafana.yaml
-	@echo "-----------------------------\nCluster iniciado com sucesso...\n-----------------------------\n"
+init_cluster: check_k8s check_swap
+	@echo "=======================\nPronto para iniciar cluster\n=======================\n";
+	
+
+check_swap:
+	@if grep -q "^[^#]" /etc/fstab; then \
+		sudo swapoff -a; \
+	fi
