@@ -5,6 +5,7 @@ check_docker:
 	@if test ! -x "$(shell which docker)"; then \
 		echo "\n\tDocker não encontrado. Instalando Docker...\n"; \
 		curl -fsSL https://get.docker.com | sh; \
+		sudo apt-get install -y apt-transport-https ca-certificates curl \
 	else \
 		echo "Docker está instalado\n"; \
 	fi
@@ -13,9 +14,11 @@ check_k8s:
 	@echo "=======================\nVerificando Kubernetes\n=======================\n";
 	@if test ! -x "$(shell which kubectl)"; then \
 		echo "\n\tKubernetes não encontrado. Instalando Kubernetes...\n"; \
-		echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" | tee /etc/apt/sources.list.d/kubernetes.list && \
-		curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
-		sudo apt update && sudo apt install -y kubectl kubeamd kubelet; \
+		sudo curl -fsSLo /etc/apt/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg \
+		echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list \
+		sudo apt-get update \ 
+		sudo apt-get install -y kubelet kubeadm kubectl \
+		sudo apt-mark hold kubelet kubeadm kubectl; \
 	else \
 		echo "Kubernetes está instalado\n"; \
 	fi

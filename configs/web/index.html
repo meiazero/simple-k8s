@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>web server | pod apache</title>
+    <title>web server | pod web</title>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,17 +11,17 @@
     <!-- link do css bootstrap -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
 
-    <script>
-        const portsvc = window.location.port; // faz a leitura da porta do serviço
-        console.log(`O serviço está sendo executado na porta ${portsvc}.`); // exibe no console do navegador
-        const element = document.getElementById('port-display'); // seleciona o elemento com id "port-display"
-        element.textContent = `porta ${portsvc}`; // exibe a porta do serviço no elemento selecionado
-    </script>
-
 </head>
 <body class="bg-dark text-white">
     <div class="w-75 m-auto">
-        <p class="text-center p-4">Esse serviço está sendo provido por <code>nginx</code> com kubernetes na <code><i id="port-display"></i></code></p>
+	    <p class="text-center p-4">Esse serviço está sendo provido por <code>nginx</code> com kubernetes na <span id="port-display">porta: 80</span></p>
     </div>
+    <script>
+	    const portsvc = window.location.port;
+	    console.log(`serviço esána porta: ${portsvc}`);
+	    const portDisplay = document.getElementById("port-display");
+	    // console.log(`tipo de portDiplay: ${typeof(portDisplay)}`);
+	    portDisplay.innerHTML = `porta: ${portsvc}`;
+    </script>
 </body>
 </html>

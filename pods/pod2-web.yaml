@@ -1,15 +1,16 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: apache-pod-2
+  name: web-pod-2
 spec:
   containers:
-  - name: apache-container-2
+  - name: web-container-2
     image: alpine
+    command: ["apk add nginx"]
     ports:
     - containerPort: 80
     volumeMounts:
-    - mountPath: /var/www/html
+    - mountPath: /usr/share/nginx/html/
       name: html-volume
   volumes:
   - name: html-volume
