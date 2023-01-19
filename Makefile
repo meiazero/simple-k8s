@@ -15,8 +15,6 @@ install_microk8s:
 	@if test ! -x "$(shell which microk8s)"; then \
 		@echo "\n\Micro K8s não encontrado. Instalando Micro K8s...\n"; \
 		sudo snap install microk8s --classic --channel=1.26; \
-		sudo usermod -a -G microk8s $USER; \
-		sudo chown -f -R $USER ~/.kube ; \
 	else \
 		echo "Micro K8s está instalado\n"; \
 	fi
@@ -26,7 +24,7 @@ directories:
 	@echo "=======================\nCriando diretórios\n=======================\n"; \
 	mkdir -p /home/$(shell whoami)/container/web \
 			/home/$(shell whoami)/container/prometheus \
-			/home/$(shell whoami)/container/portainer \
+			/home/$(shell whoami)/container/portainer;
 	@echo "Criando diretório -> 'container'\nCriando diretório -> 'container/web'\nCriando diretório -> 'container/prometheus'\nCriando diretório -> 'container/portainer'\n"
 
 files: directories
@@ -43,7 +41,7 @@ files: directories
 
 
 init_cluster: install_microk8s check_swap
-	@echo "\n=======================\nPronto para iniciar cluster\n=======================\n\n use 'su - $USER' e 'microk8s status --wait-ready'\ncaso nao haja kubectl instalado no sistema, use um alias para o microk8s kubectl\nadicione em seu .bashrc ou .zshrc essa linha:\n alias kubectl='microk8s kubectl'\ncheque os pods, nodes e services com:\n kubectl get services\nkubectl get pods --all-namespaces\nkubectl get nodes\n\npara parar o microk8s use:\nmicrok8s stop e microk8s start para iniciar";
+	@echo "\n=======================\nPronto para iniciar cluster\n=======================\n\n'microk8s status --wait-ready'\n\nCaso nao haja kubectl instalado no sistema, use um alias para o microk8s\nadicione em seu .bashrc ou .zshrc essa linha:\n\talias kubectl='microk8s kubectl'\ncheque os pods, nodes e services com:\n kubectl get services\nkubectl get pods --all-namespaces\nkubectl get nodes\n\npara parar o microk8s use:\nmicrok8s stop e microk8s start para iniciar";
 	
 
 check_swap:

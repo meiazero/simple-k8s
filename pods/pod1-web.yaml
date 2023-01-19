@@ -7,9 +7,9 @@ spec:
   - name: nginx-web
     image: nginx
     volumeMounts:
-    - name: firts-web-volume
+    - name: web-volume
       mountPath: /usr/share/nginx/html/
   volumes:
-  - name: first-web-volume
+  - name: web-volume
     hostPath:
       path: /home/$(whoami)/container/web/
