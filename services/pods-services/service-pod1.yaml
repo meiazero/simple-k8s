@@ -6,7 +6,7 @@ spec:
   selector:
     app: first-web-pod
   ports:
-    name: second-pod-web
+    name: first-pod-web
     protocol: TCP
     nodePort: 30098
     port: 80
