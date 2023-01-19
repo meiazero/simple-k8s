@@ -5,29 +5,23 @@ metadata:
 spec:
   containers:
   - name: prometheus
-    image: prometheus
+    image: prom/prometheus
     ports:
     - containerPort: 9090
     volumeMounts:
-    - mountPath: /etc/prometheus
-      name: prometheus-volume
+    - name: prometheus-volume
+      mountPath: /etc/prometheus
   - name: grafana
-    image: grafana
+    image: grafana/grafana
     ports:
     - containerPort: 3000
     volumeMounts:
-    - mountPath: /var/grafana
-      name: grafana-volume
-  - name: node-exporter
-    image: quay.io/prometheus/node-exporter
-    ports:
-    - containerPort: 9100
-
+    - name: grafana-volume
+      mountPath: /var/lib/grafana
   volumes:
   - name: prometheus-volume
     hostPath:
-      path: /home/$(whoami)/container/prometheus
+      path: /home/$(whoami)/container/prometheus/
   - name: grafana-volume
     hostPath:
-      path: /home/$(whoami)/container/grafana
-
+      path: /home/$(whoami)/container/grafana/
