@@ -1,28 +1,24 @@
-all: directories files check_docker check_k8s init_cluster
+all: directories files check_docker install_microk8s init_cluster
 
 check_docker:
 	@echo "=======================\nVerificando Docker\n=======================\n";
 	@if test ! -x "$(shell which docker)"; then \
 		echo "\n\tDocker não encontrado. Instalando Docker...\n"; \
+		sudo apt-get install -y apt-transport-https ca-certificates curl snapd \
 		curl -fsSL https://get.docker.com | sh; \
-		sudo apt-get install -y apt-transport-https ca-certificates curl \
 	else \
 		echo "Docker está instalado\n"; \
 	fi
 
-check_k8s:
-	@echo "=======================\nVerificando Kubernetes\n=======================\n";
-	@if test ! -x "$(shell which kubectl)"; then \
-		echo "\n\tKubernetes não encontrado. Instalando Kubernetes...\n"; \
-		sudo apt update && sudo apt install -f -y apt-transport-https ca-certificates curl; \
-		sudo curl -fsSLo /etc/apt/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg; \
-		echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list; \
-		sudo apt update && sudo apt install -y kubectl kubeadm kubelet && sudo apt-mark hold kubeadm kubectl kubelet; \
-		sudo rm /etc/containerd/config.toml; \
-		sudo systemctl restart containerd ; \
+install_microk8s:
+	@echo "=======================\nVerificando Micro-K8s\n=======================\n";
+	@if test ! -x "$(shell which microk8s)"; then \
+		@echo "\n\Micro K8s não encontrado. Instalando Micro K8s...\n"; \
+		sudo snap install microk8s --classic --channel=1.26; \
 	else \
 		echo "Kubernetes está instalado\n"; \
 	fi
+	
 
 directories:
 	@echo "=======================\nCriando diretórios\n=======================\n";
@@ -48,4 +44,5 @@ init_cluster: check_k8s check_swap
 check_swap:
 	@if grep -q "^[^#]" /etc/fstab; then \
 		sudo swapoff -a; \
+		@echo "Disable the swap memory on /etc/fstab."; \
 	fi
