@@ -6,8 +6,9 @@ spec:
   selector:
     app: second-web-pod
   ports:
-  - name: http
+    name: second-pod-web
     protocol: TCP
-    port: 3001
-    targetPort: 80
-  type: ClusterIP
+    nodePort: 30099
+    port: 80
+    targetPort: 3001
+
