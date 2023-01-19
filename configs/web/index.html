@@ -14,11 +14,11 @@
 </head>
 <body class="bg-dark text-white">
     <div class="w-75 m-auto">
-	    <p class="text-center p-4">Esse serviço está sendo provido por <code>nginx</code> com kubernetes na <span id="port-display">porta: 80</span></p>
+	    <p class="text-center p-4">Esse servi&ccedil;o est&aacute; sendo provido por <code>nginx</code> com kubernetes na <span id="port-display">porta: 80</span></p>
     </div>
     <script>
 	    const portsvc = window.location.port;
-	    console.log(`serviço esána porta: ${portsvc}`);
+	    console.log(`service on port: ${portsvc}`);
 	    const portDisplay = document.getElementById("port-display");
 	    // console.log(`tipo de portDiplay: ${typeof(portDisplay)}`);
 	    portDisplay.innerHTML = `porta: ${portsvc}`;

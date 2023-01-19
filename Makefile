@@ -1,51 +1,53 @@
-all: directories files check_docker check_k8s init_cluster
+all: directories files check_docker install_microk8s init_cluster
 
 check_docker:
 	@echo "=======================\nVerificando Docker\n=======================\n";
 	@if test ! -x "$(shell which docker)"; then \
 		echo "\n\tDocker não encontrado. Instalando Docker...\n"; \
-		curl -fsSL https://get.docker.com | sh; \
-		sudo apt-get install -y apt-transport-https ca-certificates curl \
+		sudo apt-get install -y apt-transport-https ca-certificates curl snapd;\
+		curl -fsSL get.docker.com | sh; \
 	else \
 		echo "Docker está instalado\n"; \
 	fi
 
-check_k8s:
-	@echo "=======================\nVerificando Kubernetes\n=======================\n";
-	@if test ! -x "$(shell which kubectl)"; then \
-		echo "\n\tKubernetes não encontrado. Instalando Kubernetes...\n"; \
-		sudo apt update && sudo apt install -f -y apt-transport-https ca-certificates curl; \
-		sudo curl -fsSLo /etc/apt/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg; \
-		echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list; \
-		sudo apt update && sudo apt install -y kubectl kubeadm kubelet && sudo apt-mark hold kubeadm kubectl kubelet; \
-		sudo rm /etc/containerd/config.toml; \
-		sudo systemctl restart containerd ; \
+install_microk8s:
+	@echo "=======================\nVerificando Micro-K8s\n=======================\n";
+	@if test ! -x "$(shell which microk8s)"; then \
+		@echo "\n\Micro K8s não encontrado. Instalando Micro K8s...\n"; \
+		sudo snap install microk8s --classic --channel=1.26; \
+		sudo usermod -a -G microk8s $USER; \
+		sudo chown -f -R $USER ~/.kube ; \
 	else \
-		echo "Kubernetes está instalado\n"; \
+		echo "Micro K8s está instalado\n"; \
 	fi
+	
 
 directories:
-	@echo "=======================\nCriando diretórios\n=======================\n";
+	@echo "=======================\nCriando diretórios\n=======================\n"; \
 	mkdir -p /home/$(shell whoami)/container/web \
 			/home/$(shell whoami)/container/prometheus \
-			/home/$(shell whoami)/container/portainer
+			/home/$(shell whoami)/container/portainer \
 	@echo "Criando diretório -> 'container'\nCriando diretório -> 'container/web'\nCriando diretório -> 'container/prometheus'\nCriando diretório -> 'container/portainer'\n"
 
 files: directories
-	@echo "=======================\nCopiando arquivos\n=======================\n"
-	@echo "Copiando 'config/prometheus/*' -> '/home/$(shell whoami)/container/prometheus/'"
-	cp -R configs/prometheus /home/$(shell whoami)/container/
-	@echo "Copiando 'config/web/*' -> '/home/$(shell whoami)/container/web/'"
-	cp -R configs/web /home/$(shell whoami)/container/
-	@echo "-----------------------------\nArquivos copiados com sucesso...\n-----------------------------\n"
-	cp -R pods /home/$(shell whoami)/container/
-	cp -R services /home/$(shell whoami)/container/
+	@echo "=======================\nCopiando arquivos\n=======================\n";  
+	@echo "Copiando 'config/prometheus/*' -> '/home/$(shell whoami)/container/prometheus/'" ; \
+	cp -R configs/prometheus /home/$(shell whoami)/container/ ;
+	@echo "Copiando 'config/web/*' -> '/home/$(shell whoami)/container/web/'" ;\
+	cp -R configs/web /home/$(shell whoami)/container/ ;
+	@echo "Copiando 'pods/*' -> '/home/$(shell whoami)/container/''" ;\
+	cp -R pods /home/$(shell whoami)/container/ ;
+	@echo "Copiando 'services/*' -> '/home/$(shell whoami)/container/''" ;\
+	cp -R services /home/$(shell whoami)/container/   ;
+	@echo "-----------------------------\nArquivos copiados com sucesso...\n-----------------------------\n" ;
 
-init_cluster: check_k8s check_swap
-	@echo "=======================\nPronto para iniciar cluster\n=======================\n";
+
+init_cluster: install_microk8s check_swap
+	@echo "\n=======================\nPronto para iniciar cluster\n=======================\n\n use 'su - $USER' e 'microk8s status --wait-ready'\ncaso nao haja kubectl instalado no sistema, use um alias para o microk8s kubectl\nadicione em seu .bashrc ou .zshrc essa linha:\n alias kubectl='microk8s kubectl'\ncheque os pods, nodes e services com:\n kubectl get services\nkubectl get pods --all-namespaces\nkubectl get nodes\n\npara parar o microk8s use:\nmicrok8s stop e microk8s start para iniciar";
 	
 
 check_swap:
 	@if grep -q "^[^#]" /etc/fstab; then \
 		sudo swapoff -a; \
+		echo "Disable the swap memory on /etc/fstab."; \
 	fi
