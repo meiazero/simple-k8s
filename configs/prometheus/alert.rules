@@ -1,16 +1,15 @@
 groups:
-- name: example
-  rules:
-  - alert: HighRequestLatency
-    expr: job:request_latency_seconds:mean5m{job="myapp"} > 0.5
-    for: 10m
-    annotations:
-      summary: "High request latency"
-      description: "The mean request latency is above 0.5 seconds for the past 10 minutes."
-  - alert: HighErrorRate
-    expr: job:request_errors_total:rate5m{job="myapp"} > 0.1
-    for: 10m
-    annotations:
-      summary: "High error rate"
-      description: "The error rate is above 0.1 for the past 10 minutes."
-
+  - name: example
+    rules:
+      - alert: HighRequestLatency
+        expr: job:request_latency_seconds:mean5m{job="myapp"} > 0.5
+        for: 10m
+        annotations:
+          summary: "High request latency"
+          description: "The mean request latency is above 0.5 seconds for the past 10 minutes."
+      - alert: HighErrorRate
+        expr: job:request_errors_total:rate5m{job="myapp"} > 0.1
+        for: 10m
+        annotations:
+          summary: "High error rate"
+          description: "The error rate is above 0.1 for the past 10 minutes."

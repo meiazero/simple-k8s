@@ -1,4 +1,4 @@
-all: directories files check_docker install_microk8s init_cluster
+all: directories files install_microk8s init_cluster
 
 check_docker:
 	@echo "=======================\nVerificando Docker\n=======================\n";
@@ -33,12 +33,9 @@ files: directories
 	cp -R configs/prometheus /home/$(shell whoami)/container/ ;
 	@echo "Copiando 'config/web/*' -> '/home/$(shell whoami)/container/web/'" ;\
 	cp -R configs/web /home/$(shell whoami)/container/ ;
-	@echo "Copiando 'pods/*' -> '/home/$(shell whoami)/container/''" ;\
-	cp -R pods /home/$(shell whoami)/container/ ;
-	@echo "Copiando 'services/*' -> '/home/$(shell whoami)/container/''" ;\
-	cp -R services /home/$(shell whoami)/container/   ;
+	@echo "Copiando 'nginx-pod.yaml' -> '/home/$(shell whoami)/container/''" ;\
+	cp nginx-pod.yaml /home/$(shell whoami)/container/ ;
 	@echo "-----------------------------\nArquivos copiados com sucesso...\n-----------------------------\n" ;
-
 
 init_cluster: install_microk8s check_swap
 	@echo "\n=======================\nPronto para iniciar cluster\n=======================\n\n'microk8s status --wait-ready'\n\nCaso nao haja kubectl instalado no sistema, use um alias para o microk8s\nadicione em seu .bashrc ou .zshrc essa linha:\n\talias kubectl='microk8s kubectl'\ncheque os pods, nodes e services com:\n kubectl get services\nkubectl get pods --all-namespaces\nkubectl get nodes\n\npara parar o microk8s use:\nmicrok8s stop e microk8s start para iniciar";
