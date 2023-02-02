@@ -1,48 +1,105 @@
-all: directories files install_microk8s init_cluster
+EXEC = main
 
-check_docker:
-	@echo "=======================\nVerificando Docker\n=======================\n";
-	@if test ! -x "$(shell which docker)"; then \
-		echo "\n\tDocker não encontrado. Instalando Docker...\n"; \
-		sudo apt-get install -y apt-transport-https ca-certificates curl snapd;\
-		curl -fsSL get.docker.com | sh; \
-	else \
-		echo "Docker está instalado\n"; \
-	fi
+PROM_DOWNLOAD_LINK = https://github.com/prometheus/prometheus/releases/download/v2.37.5/prometheus-2.37.5.linux-amd64.tar.gz
+PROM_ARCHIVE_COMPACT = prometheus.tar.gz
+PROM_LONG_NAME = prometheus-2.37.5.linux-amd64
+PROM_ETC = /etc/prometheus
+PROM = prometheus
+SYSTEMD= /etc/systemd/system
+USER = $(shell whoami)
+CP = cp 
+CPR = cp -R
+MKDIR = mkdir -pv
+DIR = /home/$(USER)
+RM = rm -rf
+PWD = $(shell pwd)
 
-install_microk8s:
-	@echo "=======================\nVerificando Micro-K8s\n=======================\n";
-	@if test ! -x "$(shell which microk8s)"; then \
-		@echo "\n\Micro K8s não encontrado. Instalando Micro K8s...\n"; \
-		sudo snap install microk8s --classic --channel=1.26; \
-	else \
-		echo "Micro K8s está instalado\n"; \
-	fi
+all: $(EXEC)
+
+$(EXEC): files prometheus microk8s
+
+dir: 
+	@echo "CRIANDO DIRETORIO 'CONTAINER'...\n"
+	@$(MKDIR) $(DIR)/container/
+	@echo "\n"
 	
+files: dir
+	@echo "COPIANDO ARQUIVOS...\n" 
+	@$(CPR) configs/web/ $(DIR)/container/
+	@$(CP) nginx-pod.yaml $(DIR)/container/
 
-directories:
-	@echo "=======================\nCriando diretórios\n=======================\n"; \
-	mkdir -p /home/$(shell whoami)/container/web \
-			/home/$(shell whoami)/container/prometheus \
-			/home/$(shell whoami)/container/portainer;
-	@echo "Criando diretório -> 'container'\nCriando diretório -> 'container/web'\nCriando diretório -> 'container/prometheus'\nCriando diretório -> 'container/portainer'\n"
-
-files: directories
-	@echo "=======================\nCopiando arquivos\n=======================\n";  
-	@echo "Copiando 'config/prometheus/*' -> '/home/$(shell whoami)/container/prometheus/'" ; \
-	cp -R configs/prometheus /home/$(shell whoami)/container/ ;
-	@echo "Copiando 'config/web/*' -> '/home/$(shell whoami)/container/web/'" ;\
-	cp -R configs/web /home/$(shell whoami)/container/ ;
-	@echo "Copiando 'nginx-pod.yaml' -> '/home/$(shell whoami)/container/''" ;\
-	cp nginx-pod.yaml /home/$(shell whoami)/container/ ;
-	@echo "-----------------------------\nArquivos copiados com sucesso...\n-----------------------------\n" ;
-
-init_cluster: install_microk8s check_swap
-	@echo "\n=======================\nPronto para iniciar cluster\n=======================\n\n'microk8s status --wait-ready'\n\nCaso nao haja kubectl instalado no sistema, use um alias para o microk8s\nadicione em seu .bashrc ou .zshrc essa linha:\n\talias kubectl='microk8s kubectl'\ncheque os pods, nodes e services com:\n kubectl get services\nkubectl get pods --all-namespaces\nkubectl get nodes\n\npara parar o microk8s use:\nmicrok8s stop e microk8s start para iniciar";
-	
-
-check_swap:
-	@if grep -q "^[^#]" /etc/fstab; then \
-		sudo swapoff -a; \
-		echo "Disable the swap memory on /etc/fstab."; \
+microk8s:
+	@if test ! -x $(shell which microk8s); then \
+		echo "INSTALANDO MICROK8S....\n" ; \
+		sudo snap install microk8s --classic; \
+	else \
+		echo "MICROK8S JÁ ESTÁ INSTALADO....\n"; \
 	fi
+
+prometheus: download_prom rename_prom_dir check_prom_user
+	@echo "CRIANDO DIRETORIOS PROMETHEUS...\n"
+	@sudo $(MKDIR) /etc/$(PROM)/
+	@sudo $(MKDIR) /var/lib/$(PROM)/
+	@echo "MUDANDO PERMISSOES ARQUIVOS PROMETHEUS...\n"
+	@sudo chown prometheus:prometheus /etc/$(PROM)/
+	@sudo chown prometheus:prometheus /var/lib/$(PROM)/
+# copia configuração de alvos do prometheus
+	@echo "COPIANDO CONFIGURACAO E REGRA DO PROMETHEUS...\n"
+	@sudo $(CP) configs/prometheus.yml $(PROM_ETC)/
+	@sudo $(CP) configs/alert.rules $(PROM_ETC)/
+# muda a permissão do arquivo de prometheus para o usuário prometheus
+	@echo "MUDANDO PERMISSOES DOS ARQUIVOS DE CONFIGURACAO...\n"
+	@sudo chown prometheus:prometheus $(PROM_ETC)/prometheus.yml
+# copia os binarios configuranção do prometheus e muda a permissão
+	@echo "COPIANDO BINARIOS PROMETHEUS E PROMTOLLS...\n"
+	@sudo $(CP) $(PROM)/$(PROM) /usr/local/bin/
+	@sudo $(CP) $(PROM)/promtool /usr/local/bin/
+	@echo "MUDANDO PERMISSOES DE EXECUCAO DOS BINARIOS...\n"
+	@sudo chown prometheus:prometheus /usr/local/bin/$(PROM)
+	@sudo chown prometheus:prometheus /usr/local/bin/promtool
+# copia os arquivos de configuração do prometheus
+	@echo "COPIANDO ARQUIVOS DA UI...\n" 	
+	@sudo $(CPR) $(PROM)/consoles/ $(PROM_ETC)/ 
+	@sudo $(CPR) $(PROM)/console_libraries/ $(PROM_ETC)/ 
+	@echo "MUDANDO PERMISSOES DOS ARQUIVOS DE UI...\n"
+	@sudo chown -R prometheus:prometheus $(PROM_ETC)/consoles/
+	@sudo chown -R prometheus:prometheus $(PROM_ETC)/console_libraries/
+# copia o arquivo de service para o systemd
+	@echo "COPIANDO PROMETHEUS.SERVICE...\n"
+	@sudo $(CP) configs/prometheus.service $(SYSTEMD)/
+# reinicia o systemd, registra e inicia o serviço do prometheus
+	@echo "REINICIANDO SYSTEMD...\n"
+	@sudo systemctl daemon-reload
+	@echo "REINICIANDO SERVICO DO PROMETHEUS...\n"
+	@sudo systemctl start prometheus
+
+download_prom: 
+	@if test ! -f $(PROM_ARCHIVE_COMPACT); then \
+		echo "FAZENDO DOWNLOAD PROMETHEUS......\n"; \
+		wget $(PROM_DOWNLOAD_LINK) -O $(PROM_ARCHIVE_COMPACT) --quiet; \
+	else \
+		echo "PROMETHEUS.TAR.GZ JA EXISTE\n"; \
+	fi
+
+rename_prom_dir:
+	@if test ! -d $(PROM); then \
+		tar -xzf $(PROM_ARCHIVE_COMPACT); \
+		mv $(PROM_LONG_NAME) $(PROM); \
+		echo "PROMETHEUS DESCOMPACTADO\n"; \
+	else \
+		echo "PROMETHEUS JA DESCOMPACTADO\n"; \
+	fi
+
+check_prom_user:
+	@if test ! $(shell id -u prometheus); then \
+		echo "CRIANDO USUARIO PROMETHEUS...\n"; \
+		sudo useradd --no-create-home --shell /bin/false $(PROM); \
+	else \
+		echo "USUARIO PROMETHEUS JA EXISTE\n"; \
+	fi
+
+clean: 
+# TODO: apagar os arquivos do prometheus depois de copiar para o host.
+
+# TODO: mudar tudo para inglês	
+# TODO: copia dos arquivos de prometheus/console e prometheus/
