@@ -19,87 +19,84 @@ all: $(EXEC)
 $(EXEC): files prometheus microk8s
 
 dir: 
-	@echo "CRIANDO DIRETORIO 'CONTAINER'...\n"
+	@echo "CREATING DIRECTORY 'CONTAINER'...\n"
 	@$(MKDIR) $(DIR)/container/
 	@echo "\n"
 	
 files: dir
-	@echo "COPIANDO ARQUIVOS...\n" 
+	@echo "COPYING FILES...\n" 
 	@$(CPR) configs/web/ $(DIR)/container/
 	@$(CP) nginx-pod.yaml $(DIR)/container/
 
 microk8s:
 	@if test ! -x $(shell which microk8s); then \
-		echo "INSTALANDO MICROK8S....\n" ; \
+		echo "INSTALLING MICROK8S....\n" ; \
 		sudo snap install microk8s --classic; \
 	else \
-		echo "MICROK8S JÁ ESTÁ INSTALADO....\n"; \
+		echo "MICROK8S IS INSTALLED....\n"; \
 	fi
 
 prometheus: download_prom rename_prom_dir check_prom_user
-	@echo "CRIANDO DIRETORIOS PROMETHEUS...\n"
+	@echo "CREATING DIRECTORY PROMETHEUS...\n"
 	@sudo $(MKDIR) /etc/$(PROM)/
 	@sudo $(MKDIR) /var/lib/$(PROM)/
-	@echo "MUDANDO PERMISSOES ARQUIVOS PROMETHEUS...\n"
+	@echo "CHANGING PROMETHEUS FILES PERMISSIONS...\n"
 	@sudo chown prometheus:prometheus /etc/$(PROM)/
 	@sudo chown prometheus:prometheus /var/lib/$(PROM)/
 # copia configuração de alvos do prometheus
-	@echo "COPIANDO CONFIGURACAO E REGRA DO PROMETHEUS...\n"
+	@echo "COPYING CONFIGURATION FILES AND RULES OF PROMETHEUS...\n"
 	@sudo $(CP) configs/prometheus.yml $(PROM_ETC)/
 	@sudo $(CP) configs/alert.rules $(PROM_ETC)/
 # muda a permissão do arquivo de prometheus para o usuário prometheus
-	@echo "MUDANDO PERMISSOES DOS ARQUIVOS DE CONFIGURACAO...\n"
+	@echo "CHANGING CONFIGURATION FILES PERMISSIONS...\n"
 	@sudo chown prometheus:prometheus $(PROM_ETC)/prometheus.yml
-# copia os binarios configuranção do prometheus e muda a permissão
-	@echo "COPIANDO BINARIOS PROMETHEUS E PROMTOLLS...\n"
+# copia os binários configuração do prometheus e muda a permissão
+	@echo "COPYING BINARY OF PROMETHEUS AND PROMTOOLS...\n"
 	@sudo $(CP) $(PROM)/$(PROM) /usr/local/bin/
 	@sudo $(CP) $(PROM)/promtool /usr/local/bin/
-	@echo "MUDANDO PERMISSOES DE EXECUCAO DOS BINARIOS...\n"
+	@echo "CHANGING BINARY EXECUTE PERMISSION...\n"
 	@sudo chown prometheus:prometheus /usr/local/bin/$(PROM)
 	@sudo chown prometheus:prometheus /usr/local/bin/promtool
 # copia os arquivos de configuração do prometheus
-	@echo "COPIANDO ARQUIVOS DA UI...\n" 	
+	@echo "COPYING UI FILES...\n" 	
 	@sudo $(CPR) $(PROM)/consoles/ $(PROM_ETC)/ 
 	@sudo $(CPR) $(PROM)/console_libraries/ $(PROM_ETC)/ 
-	@echo "MUDANDO PERMISSOES DOS ARQUIVOS DE UI...\n"
+	@echo "CHANGING PERMISSIONS DOS UI FILES...\n"
 	@sudo chown -R prometheus:prometheus $(PROM_ETC)/consoles/
 	@sudo chown -R prometheus:prometheus $(PROM_ETC)/console_libraries/
-# copia o arquivo de service para o systemd
-	@echo "COPIANDO PROMETHEUS.SERVICE...\n"
+# copia o arquivo de serviço para o systemd
+	@echo "COPYING PROMETHEUS.SERVICE...\n"
 	@sudo $(CP) configs/prometheus.service $(SYSTEMD)/
 # reinicia o systemd, registra e inicia o serviço do prometheus
-	@echo "REINICIANDO SYSTEMD...\n"
+	@echo "RESTART SYSTEMD...\n"
 	@sudo systemctl daemon-reload
-	@echo "REINICIANDO SERVICO DO PROMETHEUS...\n"
+	@echo "START PROMETHEUS SERVICE...\n"
 	@sudo systemctl start prometheus
 
 download_prom: 
 	@if test ! -f $(PROM_ARCHIVE_COMPACT); then \
-		echo "FAZENDO DOWNLOAD PROMETHEUS......\n"; \
+		echo "DOWNLOADING PROMETHEUS...\n"; \
 		wget $(PROM_DOWNLOAD_LINK) -O $(PROM_ARCHIVE_COMPACT) --quiet; \
 	else \
-		echo "PROMETHEUS.TAR.GZ JA EXISTE\n"; \
+		echo "PROMETHEUS.TAR.GZ EXISTING\n"; \
 	fi
 
 rename_prom_dir:
 	@if test ! -d $(PROM); then \
 		tar -xzf $(PROM_ARCHIVE_COMPACT); \
 		mv $(PROM_LONG_NAME) $(PROM); \
-		echo "PROMETHEUS DESCOMPACTADO\n"; \
+		echo "PROMETHEUS DECOMPRESSED\n"; \
 	else \
-		echo "PROMETHEUS JA DESCOMPACTADO\n"; \
+		echo "PROMETHEUS HAS ALREADY BEEN DECOMPRESSED\n"; \
 	fi
 
 check_prom_user:
 	@if test ! $(shell id -u prometheus); then \
-		echo "CRIANDO USUARIO PROMETHEUS...\n"; \
+		echo "CREATING USER PROMETHEUS...\n"; \
 		sudo useradd --no-create-home --shell /bin/false $(PROM); \
 	else \
-		echo "USUARIO PROMETHEUS JA EXISTE\n"; \
+		echo "USER PROMETHEUS ALREADY EXISTS\n"; \
 	fi
 
 clean: 
 # TODO: apagar os arquivos do prometheus depois de copiar para o host.
-
-# TODO: mudar tudo para inglês	
-# TODO: copia dos arquivos de prometheus/console e prometheus/
