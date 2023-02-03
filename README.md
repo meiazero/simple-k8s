@@ -7,7 +7,11 @@ This repo contain the files necessary to up the Pods with Services using kuberne
 ### Dependencies
 
 [make](https://www.gnu.org/software/make/) <br/>
+
+### Installations:
+
 [microk8s](https://microk8s.io/#install-microk8s) <br/>
+[prometheus](https://prometheus.io/docs/introduction/overview/)
 
 ### Usage:
 
