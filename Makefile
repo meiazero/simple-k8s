@@ -29,7 +29,7 @@ files: dir
 	@$(CP) nginx-pod.yaml $(DIR)/container/
 
 microk8s:
-	@if test ! -x $(shell which microk8s); then \
+	@if test ! -f $(which microk8s | cut -d '/' -f4); then \
 		echo "INSTALLING MICROK8S....\n" ; \
 		sudo snap install microk8s --classic; \
 	else \
@@ -100,3 +100,8 @@ check_prom_user:
 
 clean: 
 # TODO: apagar os arquivos do prometheus depois de copiar para o host.
+
+# TODO: adicionar instalação de dependências
+# TODO: adicionar instalação de Node Exporter
+# TODO: adicionar instalação do Grafana
+# TODO: verificar se os binario do prometheus e promtool já foram copiados.
