@@ -40,7 +40,7 @@ run this command: <br/>
 make
 ```
 
-### After instalation:
+### After installation:
 
 _delete the repository and make sure the 'container' directory is created in your /home/$USER_
 
@@ -50,7 +50,7 @@ _delete the repository and make sure the 'container' directory is created in you
 microk8s status --wait-ready
 ```
 
-## finaly:
+## finally:
 
 read the documentation on [microk8s.io](https://microk8s.io/docs)
 
@@ -59,4 +59,5 @@ read the documentation on [microk8s.io](https://microk8s.io/docs)
 <br/>
 This personal project has an LGPL license, its distribution is accepted free of charge, under the same or similar license. <br/><br/>
 LICENSE: GNU Lesser General Public License (LGPL) <br/><br/>
-Maintainer: [meiazero](github.com/meiazero/)
+
+Maintainer: [meiazero](https://github.com/meiazero)
