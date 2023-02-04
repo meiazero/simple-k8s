@@ -41,7 +41,7 @@ dependencies:
 	@sudo $(MPKG) update -qq >/dev/null
 	@sudo $(MPKG) install -qq -y curl git snapd >/dev/null
 
-prometheus: download_prom rename_prom_dir check_prom_user
+prometheus: download_prom rename_prom_dir check_prom_user check_bin_exists
 	@echo "CREATING DIRECTORY PROMETHEUS...\n"
 	@sudo $(MKDIR) /etc/$(PROM)/
 	@sudo $(MKDIR) /var/lib/$(PROM)/
@@ -55,13 +55,6 @@ prometheus: download_prom rename_prom_dir check_prom_user
 # muda a permissão do arquivo de prometheus para o usuário prometheus
 	@echo "CHANGING CONFIGURATION FILES PERMISSIONS...\n"
 	@sudo chown prometheus:prometheus $(PROM_ETC)/prometheus.yml
-# copia os binários configuração do prometheus e muda a permissão
-	@echo "COPYING BINARY OF PROMETHEUS AND PROMTOOLS...\n"
-	@sudo $(CP) $(PROM)/$(PROM) /usr/local/bin/
-	@sudo $(CP) $(PROM)/promtool /usr/local/bin/
-	@echo "CHANGING BINARY EXECUTE PERMISSION...\n"
-	@sudo chown prometheus:prometheus /usr/local/bin/$(PROM)
-	@sudo chown prometheus:prometheus /usr/local/bin/promtool
 # copia os arquivos de configuração do prometheus
 	@echo "COPYING UI FILES...\n" 	
 	@sudo $(CPR) $(PROM)/consoles/ $(PROM_ETC)/ 
@@ -101,6 +94,19 @@ check_prom_user:
 		sudo useradd --no-create-home --shell /bin/false $(PROM); \
 	else \
 		echo "USER PROMETHEUS ALREADY EXISTS\n"; \
+	fi
+
+# copia os binários configuração do prometheus e muda a permissão
+check_bin_exists:
+	@if test ! -f $(shell which $(PROM)); then \
+		echo "COPYING BINARY OF PROMETHEUS AND PROMTOOLS...\n" ; \
+		sudo $(CP) $(PROM)/$(PROM) /usr/local/bin/ ; \
+		sudo $(CP) $(PROM)/promtool /usr/local/bin/  ; \
+		echo "CHANGING BINARY EXECUTE PERMISSION...\n" ; \
+		sudo chown prometheus:prometheus /usr/local/bin/$(PROM) ; \
+		sudo chown prometheus:prometheus /usr/local/bin/promtool ; \
+	else \
+		echo "PROMETHEUS ALREADY COPIED\n"; \
 	fi
 
 clear: prometheus
