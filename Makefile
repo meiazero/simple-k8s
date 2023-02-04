@@ -19,6 +19,11 @@ all: $(EXEC)
 
 $(EXEC): dependencies files prometheus microk8s
 
+dependencies: 
+	@echo "INSTALLING DEPENDENCIES...\n"
+	@sudo $(MPKG) update -qq >/dev/null
+	@sudo $(MPKG) install -qq -y curl git snapd >/dev/null
+
 dir: 
 	@echo "CREATING DIRECTORY 'CONTAINER'...\n"
 	@$(MKDIR) $(DIR)/container/
@@ -36,10 +41,6 @@ microk8s:
 	else \
 		echo "MICROK8S IS INSTALLED....\n"; \
 	fi
-dependencies: 
-	@echo "INSTALLING DEPENDENCIES...\n"
-	@sudo $(MPKG) update -qq >/dev/null
-	@sudo $(MPKG) install -qq -y curl git snapd >/dev/null
 
 prometheus: download_prom rename_prom_dir check_prom_user check_bin_exists
 	@echo "CREATING DIRECTORY PROMETHEUS...\n"
