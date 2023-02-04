@@ -13,10 +13,11 @@ MKDIR = mkdir -pv
 DIR = /home/$(USER)
 RM = rm -rf
 PWD = $(shell pwd)
+MPKG = apt-get
 
 all: $(EXEC)
 
-$(EXEC): files prometheus microk8s
+$(EXEC): dependencies files prometheus microk8s
 
 dir: 
 	@echo "CREATING DIRECTORY 'CONTAINER'...\n"
@@ -35,6 +36,10 @@ microk8s:
 	else \
 		echo "MICROK8S IS INSTALLED....\n"; \
 	fi
+dependencies: 
+	@echo "INSTALLING DEPENDENCIES...\n"
+	@sudo $(MPKG) update -qq >/dev/null
+	@sudo $(MPKG) install -qq -y curl git snapd >/dev/null
 
 prometheus: download_prom rename_prom_dir check_prom_user
 	@echo "CREATING DIRECTORY PROMETHEUS...\n"
