@@ -22,14 +22,16 @@ CP = cp
 
 all: $(EXEC)
 
-$(EXEC): dependencies files prometheus node_exporter microk8s
+$(EXEC): dependencies files prometheus node_exporter grafana microk8s
 
 dependencies: 
 	@echo "INSTALLING DEPENDENCIES...\n"
+	@echo "+ sudo $(MPKG) update -qq >/dev/null"
 	@sudo $(MPKG) update -qq >/dev/null
-	@sudo $(MPKG) install -qq -y curl git snapd >/dev/null
+	@echo "+ sudo $(MPKG) install -qq -y curl git snapd adduser apt-transport-https software-properties-common wget >/dev/null"
+	@sudo $(MPKG) install -qq -y curl git snapd adduser apt-transport-https software-properties-common wget >/dev/null
 
-debian: dependencies
+debian:
 	@if test ! $(FLAVOR) = "Debian"; then \
 		echo "INSTALLING SNAP CORE FOR DEBIAN...\n"; \
 		sudo snap install core snapd ; \
@@ -166,10 +168,32 @@ check_expo_bin:
 		echo "NODE_EXPORTER ALREADY COPIED\n"; \
 	fi
 
+grafana: grafana_add_repo
+	@echo "INSTALLING GRAFANA...\n"
+	@sudo apt-get install -y -qq grafana > /dev/null
+	@echo "RESTART SYSTEMD...\n"
+	@sudo systemctl daemon-reload
+	@echo "START GRAFANA SERVICE...\n"
+	@sudo systemctl start grafana-server
+
+grafana_key:
+	@echo "DOWNLOADING GRAFANA PUBLIC KEY...\n"
+	@sudo wget -q -O /usr/share/keyrings/grafana.key https://apt.grafana.com/gpg.key
+
+grafana_add_repo: grafana_key
+	@if test ! -f $(ls /etc/apt/sources.list.d | grep -i grafana); then \
+		echo "ADDING GRAFANA REPOSITORY...\n"; \
+		echo "deb [signed-by=/usr/share/keyrings/grafana.key] https://apt.grafana.com stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list ; \
+		echo "\n$(MPKG) update -qq > /dev/null \n" ; \
+		sudo $(MPKG) update -qq > /dev/null ; \
+	else: \
+		echo "GRAFANA REPOSITORY ALREADY EXISTS\n"; \
+	fi
+
 clear: prometheus
 	@echo "CLEARING DOWNLOADS...\n"
 	@$(RM) $(PROM) $(PROM_COMPRESSED) 
 
 # TODO: testar instalação de Node Exporter
-# TODO: adicionar instalação do Grafana
-# TODO: não fazer o download do prometheus caso já exista uma pasta com o nome prometheus
+# TODO: testar instalação do Grafana
+# TODO: melhorar mensagens no console
