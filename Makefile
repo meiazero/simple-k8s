@@ -1,24 +1,28 @@
 EXEC = main
 
+FLAVOR = $(shell lsb_release -i | cut -d ':' -f2 | tr -d '[:space:]')
 PROM_DOWNLOAD_LINK = https://github.com/prometheus/prometheus/releases/download/v2.37.5/prometheus-2.37.5.linux-amd64.tar.gz
-PROM_ARCHIVE_COMPACT = prometheus.tar.gz
+EXPO_DOWNLOAD_LINK = https://github.com/prometheus/node_exporter/releases/download/v1.5.0/node_exporter-1.5.0.linux-amd64.tar.gz
+PROM_COMPRESSED = prometheus.tar.gz
+EXPO_COMPRESSED = node_exporter.tar.gz
 PROM_LONG_NAME = prometheus-2.37.5.linux-amd64
+EXPO_LONG_NAME = node_exporter-1.5.0.linux-amd64
 PROM_ETC = /etc/prometheus
 PROM = prometheus
+EXPO = node_exporter
 SYSTEMD= /etc/systemd/system
 USER = $(shell whoami)
-CP = cp 
-CPR = cp -R
 MKDIR = mkdir -pv
 DIR = /home/$(USER)
-RM = rm -rf
 PWD = $(shell pwd)
 MPKG = apt-get
-FLAVOR = $(shell lsb_release -i | cut -d ':' -f2 | tr -d '[:space:]')
+RM = rm -rf
+CPR = cp -R
+CP = cp 
 
 all: $(EXEC)
 
-$(EXEC): dependencies files prometheus microk8s
+$(EXEC): dependencies files prometheus node_exporter microk8s
 
 dependencies: 
 	@echo "INSTALLING DEPENDENCIES...\n"
@@ -51,7 +55,7 @@ microk8s:
 		echo "MICROK8S IS INSTALLED....\n"; \
 	fi
 
-prometheus: download_prom rename_prom_dir check_prom_user check_bin_exists
+prometheus: download_prom rename_prom_dir check_prom_user check_prom_bin
 	@echo "CREATING DIRECTORY PROMETHEUS...\n"
 	@sudo $(MKDIR) /etc/$(PROM)/
 	@sudo $(MKDIR) /var/lib/$(PROM)/
@@ -82,16 +86,16 @@ prometheus: download_prom rename_prom_dir check_prom_user check_bin_exists
 	@sudo systemctl start prometheus
 
 download_prom: 
-	@if test ! -f $(PROM_ARCHIVE_COMPACT); then \
+	@if test ! -f $(PROM_COMPRESSED); then \
 		echo "DOWNLOADING PROMETHEUS...\n"; \
-		wget $(PROM_DOWNLOAD_LINK) -O $(PROM_ARCHIVE_COMPACT) --quiet; \
+		wget $(PROM_DOWNLOAD_LINK) -O $(PROM_COMPRESSED) --quiet; \
 	else \
 		echo "PROMETHEUS.TAR.GZ EXISTING\n"; \
 	fi
 
 rename_prom_dir:
 	@if test ! -d $(PROM); then \
-		tar -xzf $(PROM_ARCHIVE_COMPACT); \
+		tar -xzf $(PROM_COMPRESSED); \
 		mv $(PROM_LONG_NAME) $(PROM); \
 		echo "PROMETHEUS DECOMPRESSED\n"; \
 	else \
@@ -106,8 +110,7 @@ check_prom_user:
 		echo "USER PROMETHEUS ALREADY EXISTS\n"; \
 	fi
 
-# copia os binários configuração do prometheus e muda a permissão
-check_bin_exists:
+check_prom_bin:
 	@if test ! -f $(shell which $(PROM)); then \
 		echo "COPYING BINARY OF PROMETHEUS AND PROMTOOLS...\n" ; \
 		sudo $(CP) $(PROM)/$(PROM) /usr/local/bin/ ; \
@@ -119,10 +122,54 @@ check_bin_exists:
 		echo "PROMETHEUS ALREADY COPIED\n"; \
 	fi
 
+node_exporter: download_expo rename_expo_dir check_expo_user check_expo_bin
+	@echo "COPYING NODE_EXPORTER.SERVICE...\n"
+	@sudo $(CP) configs/node_exporter.service $(SYSTEMD)/
+	@echo "RESTART SYSTEMD...\n"
+	@sudo systemctl daemon-reload
+	@sudo systemctl enable node_exporter
+	@echo "START NODE_EXPORTER SERVICE...\n"
+	@sudo systemctl start node_exporter
+
+download_expo: 
+	@if test ! -f $(EXPO_COMPRESSED); then \
+		echo "DOWNLOADING NODE EXPORTER...\n"; \
+		wget $(EXPO_DOWNLOAD_LINK) -O $(EXPO_COMPRESSED) --quiet; \
+	else \
+		echo "NODE_EXPORTER.TAR.GZ EXISTING\n"; \
+	fi
+
+rename_expo_dir:
+	@if test ! -d $(EXPO); then \
+		tar -xzf $(EXPO_COMPRESSED); \
+		mv $(EXPO_LONG_NAME) $(EXPO); \
+		echo "NODE EXPORTER DECOMPRESSED\n"; \
+	else \
+		echo "NODE EXPORTER HAS ALREADY BEEN DECOMPRESSED\n"; \
+	fi
+
+check_expo_user:
+	@if test ! $(shell id -u node_exporter); then \
+		echo "CREATING USER NODE_EXPORTER...\n"; \
+		sudo useradd --no-create-home --shell /bin/false $(EXPO); \
+    else \
+		echo "USER NODE_EXPORTER ALREADY EXISTS\n"; \
+    fi
+
+check_expo_bin:
+	@if test ! -f $(shell which $(EXPO)); then \
+		echo "COPYING BINARY OF NODE_EXPORTER...\n" ; \
+        sudo $(CP) $(EXPO)/$(EXPO) /usr/local/bin/ ; \
+		echo "CHANGING BINARY EXECUTE PERMISSION...\n" ; \
+		sudo chown node_exporter:node_exporter /usr/local/bin/$(EXPO) ; \
+	else \
+		echo "NODE_EXPORTER ALREADY COPIED\n"; \
+	fi
+
 clear: prometheus
 	@echo "CLEARING DOWNLOADS...\n"
-	@$(RM) $(PROM) $(PROM_ARCHIVE_COMPACT) 
+	@$(RM) $(PROM) $(PROM_COMPRESSED) 
 
-# TODO: adicionar instalação de Node Exporter
+# TODO: testar instalação de Node Exporter
 # TODO: adicionar instalação do Grafana
 # TODO: não fazer o download do prometheus caso já exista uma pasta com o nome prometheus
