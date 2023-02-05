@@ -8,6 +8,13 @@ This repo contain the files necessary to up the Pods with Services using kuberne
 
 [make](https://www.gnu.org/software/make/) <br/>
 
+if your distro is debian, you can install using this command:
+
+```bash
+make debian
+
+```
+
 ### Installations:
 
 [microk8s](https://microk8s.io/#install-microk8s) <br/>
