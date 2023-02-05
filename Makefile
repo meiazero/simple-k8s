@@ -12,7 +12,7 @@ PROM = prometheus
 EXPO = node_exporter
 SYSTEMD= /etc/systemd/system
 USER = $(shell whoami)
-MKDIR = mkdir -pv
+MKDIR = mkdir -p
 DIR = /home/$(USER)
 PWD = $(shell pwd)
 MPKG = apt-get
@@ -26,13 +26,16 @@ $(EXEC): dependencies files prometheus node_exporter microk8s
 
 dependencies: 
 	@echo "INSTALLING DEPENDENCIES...\n"
+	@echo "$(MPKG) update -qq >/dev/null"
+	@echo "$(MPKG) install -qq -y curl git snapd > /dev/null \n"
 	@sudo $(MPKG) update -qq >/dev/null
 	@sudo $(MPKG) install -qq -y curl git snapd >/dev/null
 
 debian: dependencies
 	@if test ! $(FLAVOR) = "Debian"; then \
 		echo "INSTALLING SNAP CORE FOR DEBIAN...\n"; \
-		sudo snap install core snapd ; \
+		sudo snap install core snapd > /dev/null ; \
+		echo "ALREADY INSTALLED." ; \
 	else \
 		echo "DEPENDENCIES FOR DEBIAN ALREADY INSTALLED\n"; \
 	fi
@@ -40,7 +43,6 @@ debian: dependencies
 dir: 
 	@echo "CREATING DIRECTORY 'CONTAINER'...\n"
 	@$(MKDIR) $(DIR)/container/
-	@echo "\n"
 	
 files: dir
 	@echo "COPYING FILES...\n" 
@@ -48,9 +50,10 @@ files: dir
 	@$(CP) nginx-pod.yaml $(DIR)/container/
 
 microk8s:
-	@if test ! -f $(shell which microk8s | cut -d '/' -f4); then \
+	@if test !  $(shell ls /snap/bin | grep -i microk8s | cut -d '.' -f3 | tr -d '[:space:]'); then \
 		echo "INSTALLING MICROK8S....\n" ; \
-		sudo snap install microk8s --classic; \
+		sudo snap install microk8s --classic > /dev/null ; \
+		echo "MICROK8S INSTALLED\n" ; \
 	else \
 		echo "MICROK8S IS INSTALLED....\n"; \
 	fi
@@ -111,7 +114,7 @@ check_prom_user:
 	fi
 
 check_prom_bin:
-	@if test ! -f $(shell which $(PROM)); then \
+	@if test ! $(shell ls /usr/local/bin | grep -i $(PROM)); then \
 		echo "COPYING BINARY OF PROMETHEUS AND PROMTOOLS...\n" ; \
 		sudo $(CP) $(PROM)/$(PROM) /usr/local/bin/ ; \
 		sudo $(CP) $(PROM)/promtool /usr/local/bin/  ; \
@@ -149,7 +152,7 @@ rename_expo_dir:
 	fi
 
 check_expo_user:
-	@if test ! $(shell id -u node_exporter); then \
+	@if test ! $(shell id -u node_exporter ); then \
 		echo "CREATING USER NODE_EXPORTER...\n"; \
 		sudo useradd --no-create-home --shell /bin/false $(EXPO); \
     else \
@@ -157,7 +160,7 @@ check_expo_user:
     fi
 
 check_expo_bin:
-	@if test ! -f $(shell which $(EXPO)); then \
+	@if test ! $(shell ls /usr/local/bin | grep -i $(EXPO)); then \
 		echo "COPYING BINARY OF NODE_EXPORTER...\n" ; \
         sudo $(CP) $(EXPO)/$(EXPO) /usr/local/bin/ ; \
 		echo "CHANGING BINARY EXECUTE PERMISSION...\n" ; \
@@ -166,9 +169,10 @@ check_expo_bin:
 		echo "NODE_EXPORTER ALREADY COPIED\n"; \
 	fi
 
-clear: prometheus
+clear:
 	@echo "CLEARING DOWNLOADS...\n"
 	@$(RM) $(PROM) $(PROM_COMPRESSED) 
+	@$(RM) $(EXPO) $(EXPO_COMPRESSED)
 
 # TODO: testar instalação de Node Exporter
 # TODO: adicionar instalação do Grafana
