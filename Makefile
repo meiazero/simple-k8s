@@ -14,6 +14,7 @@ DIR = /home/$(USER)
 RM = rm -rf
 PWD = $(shell pwd)
 MPKG = apt-get
+FLAVOR = $(shell lsb_release -i | cut -d ':' -f2 | tr -d '[:space:]')
 
 all: $(EXEC)
 
@@ -23,6 +24,14 @@ dependencies:
 	@echo "INSTALLING DEPENDENCIES...\n"
 	@sudo $(MPKG) update -qq >/dev/null
 	@sudo $(MPKG) install -qq -y curl git snapd >/dev/null
+
+debian: dependencies
+	@if test ! $(FLAVOR) = "Debian"; then \
+		echo "INSTALLING SNAP CORE FOR DEBIAN...\n"; \
+		sudo snap install core ; \
+	else \
+		echo "DEPENDENCIES FOR DEBIAN ALREADY INSTALLED\n"; \
+	fi
 
 dir: 
 	@echo "CREATING DIRECTORY 'CONTAINER'...\n"
@@ -35,7 +44,7 @@ files: dir
 	@$(CP) nginx-pod.yaml $(DIR)/container/
 
 microk8s:
-	@if test ! -f $(which microk8s | cut -d '/' -f4); then \
+	@if test ! -f $(shell which microk8s | cut -d '/' -f4); then \
 		echo "INSTALLING MICROK8S....\n" ; \
 		sudo snap install microk8s --classic; \
 	else \
