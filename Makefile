@@ -123,8 +123,6 @@ clear: prometheus
 	@echo "CLEARING DOWNLOADS...\n"
 	@$(RM) $(PROM) $(PROM_ARCHIVE_COMPACT) 
 
-# TODO: adicionar instalação de dependências
 # TODO: adicionar instalação de Node Exporter
 # TODO: adicionar instalação do Grafana
-# TODO: verificar se os binario do prometheus e promtool já foram copiados.
 # TODO: não fazer o download do prometheus caso já exista uma pasta com o nome prometheus
