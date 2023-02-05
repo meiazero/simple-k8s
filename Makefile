@@ -28,7 +28,7 @@ dependencies:
 debian: dependencies
 	@if test ! $(FLAVOR) = "Debian"; then \
 		echo "INSTALLING SNAP CORE FOR DEBIAN...\n"; \
-		sudo snap install core ; \
+		sudo snap install core snapd ; \
 	else \
 		echo "DEPENDENCIES FOR DEBIAN ALREADY INSTALLED\n"; \
 	fi
