@@ -35,7 +35,7 @@ debian:
 		echo "+ sudo snap install core snapd > /dev/null "; \
 		sudo snap install core snapd > /dev/null ; \
 	else \
-		echo "DEPENDENCIES FOR DEBIAN ALREADY INSTALLED\n"; \
+		echo "+ debian dependencies ok"; \
 	fi
 
 dir: 
@@ -53,10 +53,11 @@ microk8s:
 		echo "+ sudo snap install microk8s --classic > /dev/null" ; \
 		sudo snap install microk8s --classic > /dev/null ; \
 	else \
-		echo "MICROK8S IS INSTALLED....\n"; \
+		echo "+ microk8s installed"; \
 	fi
 
 prometheus: download_prom rename_prom_dir check_prom_user check_prom_bin
+# cria o diretorio do prometheus em /etc e /var/lib, depois muda as permissões dele 
 	@echo "+ sudo $(MKDIR) /etc/$(PROM)/"
 	@sudo $(MKDIR) /etc/$(PROM)/
 	@echo "+ sudo $(MKDIR) /var/lib/$(PROM)/"
@@ -65,15 +66,14 @@ prometheus: download_prom rename_prom_dir check_prom_user check_prom_bin
 	@sudo chown prometheus:prometheus /etc/$(PROM)/
 	@echo "+ sudo chown prometheus:prometheus /var/lib/$(PROM)/"
 	@sudo chown prometheus:prometheus /var/lib/$(PROM)/
-# copia configuração de alvos do prometheus
+# copia configuração do prometheus, muda a permissão dos arquivos para o usuário prometheus
 	@echo "+ sudo $(CP) configs/prometheus.yml $(PROM_ETC)/"
 	@sudo $(CP) configs/prometheus.yml $(PROM_ETC)/
 	@echo "+ sudo $(CP) configs/alert.rules $(PROM_ETC)/"
 	@sudo $(CP) configs/alert.rules $(PROM_ETC)/
-# muda a permissão do arquivo de prometheus para o usuário prometheus
 	@echo "+ sudo chown prometheus:prometheus $(PROM_ETC)/prometheus.yml"
 	@sudo chown prometheus:prometheus $(PROM_ETC)/prometheus.yml
-# copia os arquivos de configuração do prometheus
+# copia os arquivos de ui para /etc/prometheus, muda as permissões para o usuário prometheus
 	@echo "+ sudo $(CPR) $(PROM)/consoles/ $(PROM_ETC)/"
 	@sudo $(CPR) $(PROM)/consoles/ $(PROM_ETC)/
 	@echo "+ sudo $(CPR) $(PROM)/console_libraries/ $(PROM_ETC)/"
@@ -82,10 +82,9 @@ prometheus: download_prom rename_prom_dir check_prom_user check_prom_bin
 	@sudo chown -R prometheus:prometheus $(PROM_ETC)/consoles/
 	@echo "+ sudo chown -R prometheus:prometheus $(PROM_ETC)/console_libraries/"
 	@sudo chown -R prometheus:prometheus $(PROM_ETC)/console_libraries/
-# copia o arquivo de serviço para o systemd
+# copia o arquivo de serviço para o systemd, reinicia o systemd, registra e inicia o serviço do prometheus
 	@echo "+ sudo $(CP) configs/prometheus.service $(SYSTEMD)/"
 	@sudo $(CP) configs/prometheus.service $(SYSTEMD)/
-# reinicia o systemd, registra e inicia o serviço do prometheus
 	@echo "+ sudo systemctl daemon-reload"
 	@sudo systemctl daemon-reload
 	@echo "+ sudo systemctl enable prometheus"
@@ -98,8 +97,9 @@ download_prom:
 		echo "+ wget $(PROM_DOWNLOAD_LINK) -O $(PROM_COMPRESSED) --quiet"; \
 		wget $(PROM_DOWNLOAD_LINK) -O $(PROM_COMPRESSED) --quiet; \
 	else \
-		echo "PROMETHEUS.TAR.GZ EXISTING\n"; \
+		echo "+ prometheus.tar.gz exist"; \
 	fi
+# acima verifica se o arquivo comprimido do prometheus existe, se não existir ele faz o download 
 
 rename_prom_dir:
 	@if test ! -d $(PROM); then \
@@ -108,16 +108,18 @@ rename_prom_dir:
 		echo "+ mv $(PROM_LONG_NAME) $(PROM)" ; \
 		mv $(PROM_LONG_NAME) $(PROM); \
 	else \
-		echo "PROMETHEUS HAS ALREADY BEEN DECOMPRESSED\n"; \
+		echo "+ prometheus has already been decompressed"; \
 	fi
+# acima verifica se o diretorio do prometheus descompactado existe, se não existir ele vai descompactar e renomear o diretorio  
 
 check_prom_user:
 	@if test ! $(shell id -u prometheus); then \
 		echo "+ sudo useradd --no-create-home --shell /bin/false $(PROM)"; \
 		sudo useradd --no-create-home --shell /bin/false $(PROM); \
 	else \
-		echo "USER PROMETHEUS ALREADY EXISTS\n"; \
+		echo "+ user $(PROM) already exists"; \
 	fi
+# acima faz a verificaçao se o usuario prometheus existe, se não existir ele cria o usuario
 
 check_prom_bin:
 	@if test ! $(shell ls /usr/local/bin | grep -i $(PROM)); then \
@@ -130,10 +132,12 @@ check_prom_bin:
 		echo "+ sudo chown prometheus:prometheus /usr/local/bin/promtool" ; \
 		sudo chown prometheus:prometheus /usr/local/bin/promtool ; \
 	else \
-		echo "PROMETHEUS ALREADY COPIED\n"; \
+		echo "+ prometheus already copied "; \
 	fi
+# acima verifica se o binario do prometheus e promtools existe, se não existir ele copia o binario para o /usr/local/bin/ e muda a permissão para o usuario prometheus
 
 node_exporter: download_expo rename_expo_dir check_expo_user check_expo_bin
+# copia o arquivo de serviço para o systemd, reinicia o systemd, registra e inicia o serviço do node_exporter 
 	@echo "+ sudo $(CP) configs/node_exporter.service $(SYSTEMD)/"
 	@sudo $(CP) configs/node_exporter.service $(SYSTEMD)/
 	@echo "+ sudo systemctl daemon-reload"
@@ -148,8 +152,9 @@ download_expo:
 		echo "+ wget $(EXPO_DOWNLOAD_LINK) -O $(EXPO_COMPRESSED) --quiet"; \
 		wget $(EXPO_DOWNLOAD_LINK) -O $(EXPO_COMPRESSED) --quiet; \
 	else \
-		echo "NODE_EXPORTER.TAR.GZ EXISTING\n"; \
+		echo "+ node_exporter.tar.gz existing "; \
 	fi
+# acima verifica se o arquivo comprimido do node_exporter existe, se não existir ele faz o download 
 
 rename_expo_dir:
 	@if test ! -d $(EXPO); then \
@@ -158,16 +163,18 @@ rename_expo_dir:
 		echo "+ mv $(EXPO_LONG_NAME) $(EXPO)" ; \
 		mv $(EXPO_LONG_NAME) $(EXPO); \
 	else \
-		echo "NODE EXPORTER HAS ALREADY BEEN DECOMPRESSED\n"; \
+		echo "+ node_exporter has already been decompressed"; \
 	fi
+# acima verifica se o diretorio do node_exporter descompactado existe, se não existir ele vai descompactar e renomear o diretorio
 
 check_expo_user:
 	@if test ! $(shell id -u node_exporter ); then \
 		echo "+ sudo useradd --no-create-home --shell /bin/false $(EXPO)"; \
 		sudo useradd --no-create-home --shell /bin/false $(EXPO); \
     else \
-		echo "USER NODE_EXPORTER ALREADY EXISTS\n"; \
+		echo "+ user node_exporter already exists"; \
     fi
+# acima faz a verificaçao se o usuario node_exporter existe, se não existir ele cria o usuario
 
 check_expo_bin:
 	@if test ! $(shell ls /usr/local/bin | grep -i $(EXPO)); then \
@@ -176,10 +183,12 @@ check_expo_bin:
 		echo "+ sudo chown node_exporter:node_exporter /usr/local/bin/$(EXPO)" ; \
 		sudo chown node_exporter:node_exporter /usr/local/bin/$(EXPO) ; \
 	else \
-		echo "NODE_EXPORTER ALREADY COPIED\n"; \
+		echo "+ node_exporter already copied"; \
 	fi
+# acima verifica se o binario do node_exporter existe, se não existir ele copia o binario para o /usr/local/bin/ e muda a permissão para o usuario node_exporter
 
 grafana: grafana_add_repo
+# faz a instalação do grafana via gerenciador de pacotes (apt), reiniar o systemd e inicia o serviço do grafana
 	@echo "+ sudo $(MPKG) install -y -qq grafana > /dev/null"
 	@sudo $(MPKG) install -y -qq grafana > /dev/null
 	@echo "+ systemctl daemon-reload"
@@ -190,17 +199,20 @@ grafana: grafana_add_repo
 grafana_key:
 	@echo "+ sudo wget -q -O /usr/share/keyrings/grafana.key https://apt.grafana.com/gpg.key"
 	@sudo wget -q -O /usr/share/keyrings/grafana.key https://apt.grafana.com/gpg.key
+# acima faz o download da chave do grafana
 
 grafana_add_repo: grafana_key
 	@if test ! -f $(ls /etc/apt/sources.list.d | grep -i grafana); then \
 		echo "deb [signed-by=/usr/share/keyrings/grafana.key] https://apt.grafana.com stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list ; \
-		echo "\n+ $(MPKG) update -qq > /dev/null \n" ; \
+		echo " + $(MPKG) update -qq > /dev/null  " ; \
 		sudo $(MPKG) update -qq > /dev/null ; \
 	else: \
-		echo "GRAFANA REPOSITORY ALREADY EXISTS\n"; \
+		echo "+ grafana apt repository already exists "; \
 	fi
+# acima verifica se o repositorio do grafana existe, se não existir ele adiciona o repositorio do grafana
 
-clear: 
+clear:
+# remove os arquivos baixados e descompactados
 	@echo "+ $(RM) $(PROM) $(PROM_COMPRESSED)"
 	@$(RM) $(PROM) $(PROM_COMPRESSED) 
 	@echo "+ $(RM) $(EXPO) $(EXPO_COMPRESSED)"
