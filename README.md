@@ -7,19 +7,19 @@ This repository contains the files needed to a service and pod with the  monitor
 
 :warning: The script is restricted for studies, don't use it in production or on your personal machine.
 
-### **:pencil: What's installing?** <hr/>
+## **:pencil: What's installing?** 
 [microk8s](https://microk8s.io/#install-microk8s) :heavy_check_mark:,
 [Prometheus](https://prometheus.io/docs/introduction/overview/) :heavy_check_mark:,
 [Node Exporter](https://prometheus.io/docs/guides/node-exporter/) :heavy_check_mark:,
 [Grafana](https://grafana.com/docs/grafana/latest/installation/debian/) :hourglass:
 
-### **:pushpin: Before installation** <hr/>
+## **:pushpin: Before installation**
 Installs the [make](https://www.gnu.org/software/make/) using your  package manager.
 ```bash
 sudo apt install make
 ```
 
-### **:computer: Installation** <hr/>
+## **:computer: Installation** 
 clone the repository: 
 ```bash
 git clone  https://github.com/meiazero/simple-k8s.git
@@ -33,7 +33,7 @@ git clone  https://github.com/meiazero/simple-k8s.git  --branch  dev
 ```
 <br/>
 
-**:file_folder: Inside the directory:** <hr/>
+**:file_folder: Inside the directory:**
 ```bash
 cd  simple-k8s
 ```
@@ -46,10 +46,10 @@ make
 make debian
 ```
 
-### **:fire: After installation:** <hr/>
+## **:fire: After installation:** 
 _delete the repository and make sure the 'container' directory is created in your /home/$USER_
 
-### **:pray: Testing microk8s** <hr/>
+## **:pray: Testing microk8s** 
 ```bash
 microk8s status  --wait-ready
 ```
