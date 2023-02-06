@@ -1,76 +1,67 @@
-# single-k8s
 
-> The configs to single cluster using Kubernetes
+# :whale: single-k8s 
 
-This repo contain the files necessary to up the Pods with Services using kubernetes.
+  
 
-### Dependencies
+> The script installs  Kubernetes with [microk8s](https://microk8s.io/#install-microk8s) and a stack for monitoring. 
+ 
+This repository contains the files needed to a service and pod with the  monitoring stack using  [prometheus](https://prometheus.io/docs/introduction/overview/), [node_exporter](https://prometheus.io/docs/guides/node-exporter/) and [grafana](https://grafana.com/docs/grafana/latest/installation/debian/). <br/>
+:warning: The script is restricted for studies, don't use it in production or on your personal machine.
 
-[make](https://www.gnu.org/software/make/) <br/>
+### **:pencil: What's installing?** 
+[microk8s](https://microk8s.io/#install-microk8s), :heavy_check_mark:
+[Prometheus](https://prometheus.io/docs/introduction/overview/), :heavy_check_mark:
+[Node Exporter](https://prometheus.io/docs/guides/node-exporter/), :heavy_check_mark:
+[Grafana](https://grafana.com/docs/grafana/latest/installation/debian/) :hourglass:
 
-if your distro is debian, you can install using this command:
-
+### **:pushpin: Before installation**  
+Installs the [make](https://www.gnu.org/software/make/) using your  package manager.
 ```bash
-make debian
-
+sudo apt install make
 ```
 
-### Installations:
-
-[microk8s](https://microk8s.io/#install-microk8s) <br/>
-[prometheus](https://prometheus.io/docs/introduction/overview/) <br/>
-[node-exporter](https://prometheus.io/docs/guides/node-exporter/) <br/>
-[grafana](https://grafana.com/docs/grafana/latest/installation/debian/)
-
-### Usage:
-
-clone the repo: <br/>
-
+### **:computer: Installation**
+clone the repository: 
 ```bash
-git clone https://github.com/meiazero/single-k8s.git
+git clone  https://github.com/meiazero/single-k8s.git
 ```
 
-<br/>
-clone specific branch:
-
+*clone specific branch:*
 ```bash
-git clone https://github.com/meiazero/single-k8s.git --branch main
-
+git clone  https://github.com/meiazero/single-k8s.git  --branch  main
 or
-
-git clone https://github.com/meiazero/single-k8s.git --branch dev
+git clone  https://github.com/meiazero/single-k8s.git  --branch  dev
 ```
+<br/>
 
-only on repo: <br/>
-
+**:file_folder: Inside the directory:**
 ```bash
-cd single-k8s
+cd  single-k8s
 ```
-
-run this command: <br/>
-
+**:running: Run this command**
 ```bash
 make
 ```
-
-### After installation:
-
-_delete the repository and make sure the 'container' directory is created in your /home/$USER_
-
-### Also make sure the microk8s has startup using this command:
-
+**If your distro is Debian, also run this command :**
 ```bash
-microk8s status --wait-ready
+make debian
 ```
 
-## finally:
+### **:fire: After installation:**
+_delete the repository and make sure the 'container' directory is created in your /home/$USER_
 
-read the documentation on [microk8s.io](https://microk8s.io/docs)
-
-<br/>
+### **:pray: Testing microk8s**
+```bash
+microk8s status  --wait-ready
+```
 <hr/>
-<br/>
-This personal project has an LGPL license, its distribution is accepted free of charge, under the same or similar license. <br/><br/>
-LICENSE: GNU Lesser General Public License (LGPL) <br/><br/>
 
-Maintainer: [meiazero](https://github.com/meiazero)
+### **:grin: More :**
+Read the documentation on [microk8s.io](https://microk8s.io/docs) :book:
+<hr/>
+
+**Maintainer**: [meiazero](https://github.com/meiazero)
+
+**LICENSE**: GNU Lesser General Public License (LGPL)
+*This personal project has an LGPL license, its distribution is accepted free of charge, under the same or similar license.* 
+ 
