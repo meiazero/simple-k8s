@@ -1,6 +1,6 @@
 # single-k8s
 
-> The configs to single cluster using Kubernetes
+> The configs to single cluster using Kubernetes with microk8s and monitoring stack.
 
 This repo contain the files necessary to up the Pods with Services using kubernetes.
 
