@@ -10,9 +10,9 @@ This repository contains the files needed to a service and pod with the  monitor
 :warning: The script is restricted for studies, don't use it in production or on your personal machine.
 
 ### **:pencil: What's installing?** 
-[microk8s](https://microk8s.io/#install-microk8s), :heavy_check_mark:
-[Prometheus](https://prometheus.io/docs/introduction/overview/), :heavy_check_mark:
-[Node Exporter](https://prometheus.io/docs/guides/node-exporter/), :heavy_check_mark:
+[microk8s](https://microk8s.io/#install-microk8s) :heavy_check_mark:,
+[Prometheus](https://prometheus.io/docs/introduction/overview/) :heavy_check_mark:,
+[Node Exporter](https://prometheus.io/docs/guides/node-exporter/) :heavy_check_mark:,
 [Grafana](https://grafana.com/docs/grafana/latest/installation/debian/) :hourglass:
 
 ### **:pushpin: Before installation**  
