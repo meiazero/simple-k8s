@@ -18,8 +18,8 @@ make debian
 ### Installations:
 
 [microk8s](https://microk8s.io/#install-microk8s) <br/>
-[prometheus](https://prometheus.io/docs/introduction/overview/)
-[node-exporter](https://prometheus.io/docs/guides/node-exporter/)
+[prometheus](https://prometheus.io/docs/introduction/overview/) <br/>
+[node-exporter](https://prometheus.io/docs/guides/node-exporter/) <br/>
 [grafana](https://grafana.com/docs/grafana/latest/installation/debian/)
 
 ### Usage:
