@@ -1,48 +1,222 @@
-all: directories files install_microk8s init_cluster
+EXEC = main
 
-check_docker:
-	@echo "=======================\nVerificando Docker\n=======================\n";
-	@if test ! -x "$(shell which docker)"; then \
-		echo "\n\tDocker não encontrado. Instalando Docker...\n"; \
-		sudo apt-get install -y apt-transport-https ca-certificates curl snapd;\
-		curl -fsSL get.docker.com | sh; \
+FLAVOR = $(shell lsb_release -i | cut -d ':' -f2 | tr -d '[:space:]')
+PROM_DOWNLOAD_LINK = https://github.com/prometheus/prometheus/releases/download/v2.37.5/prometheus-2.37.5.linux-amd64.tar.gz
+EXPO_DOWNLOAD_LINK = https://github.com/prometheus/node_exporter/releases/download/v1.5.0/node_exporter-1.5.0.linux-amd64.tar.gz
+PROM_COMPRESSED = prometheus.tar.gz
+EXPO_COMPRESSED = node_exporter.tar.gz
+PROM_LONG_NAME = prometheus-2.37.5.linux-amd64
+EXPO_LONG_NAME = node_exporter-1.5.0.linux-amd64
+PROM_ETC = /etc/prometheus
+PROM = prometheus
+EXPO = node_exporter
+SYSTEMD= /etc/systemd/system
+USER = $(shell whoami)
+MKDIR = mkdir -p
+DIR = /home/$(USER)
+PWD = $(shell pwd)
+MPKG = apt-get
+RM = rm -rf
+CPR = cp -R
+CP = cp
+
+all: $(EXEC)
+
+$(EXEC): dependencies files prometheus node_exporter grafana microk8s
+
+dependencies: 
+	@echo "+ sudo $(MPKG) update -qq >/dev/null"
+	@sudo $(MPKG) update -qq >/dev/null
+	@echo "+ sudo $(MPKG) install -qq -y curl git snapd adduser apt-transport-https software-properties-common wget >/dev/null"
+	@sudo $(MPKG) install -qq -y curl git snapd adduser apt-transport-https software-properties-common wget >/dev/null
+
+debian:
+	@if test ! $(FLAVOR) = "Debian"; then \
+		echo "+ sudo snap install core snapd > /dev/null "; \
+		sudo snap install core snapd > /dev/null ; \
 	else \
-		echo "Docker está instalado\n"; \
+		echo "+ debian dependencies ok"; \
 	fi
 
-install_microk8s:
-	@echo "=======================\nVerificando Micro-K8s\n=======================\n";
-	@if test ! -x "$(shell which microk8s)"; then \
-		@echo "\n\Micro K8s não encontrado. Instalando Micro K8s...\n"; \
-		sudo snap install microk8s --classic --channel=1.26; \
+dir: 
+	@echo "+ $(MKDIR) $(DIR)/container/"
+	@$(MKDIR) $(DIR)/container/
+	
+files: dir
+	@echo "+ $(CPR) configs/web/ $(DIR)/container/" 
+	@$(CPR) configs/web/ $(DIR)/container/
+	@echo "+ $(CP) nginx-pod.yaml $(DIR)/container/"
+	@$(CP) nginx-pod.yaml $(DIR)/container/
+
+microk8s:
+	@if test !  $(shell ls /snap/bin | grep -i microk8s | cut -d '.' -f3 | tr -d '[:space:]'); then \
+		echo "+ sudo snap install microk8s --classic > /dev/null" ; \
+		sudo snap install microk8s --classic > /dev/null ; \
 	else \
-		echo "Micro K8s está instalado\n"; \
+		echo "+ microk8s installed"; \
 	fi
-	
 
-directories:
-	@echo "=======================\nCriando diretórios\n=======================\n"; \
-	mkdir -p /home/$(shell whoami)/container/web \
-			/home/$(shell whoami)/container/prometheus \
-			/home/$(shell whoami)/container/portainer;
-	@echo "Criando diretório -> 'container'\nCriando diretório -> 'container/web'\nCriando diretório -> 'container/prometheus'\nCriando diretório -> 'container/portainer'\n"
+prometheus: download_prom rename_prom_dir check_prom_user check_prom_bin
+# cria o diretorio do prometheus em /etc e /var/lib, depois muda as permissões dele 
+	@echo "+ sudo $(MKDIR) /etc/$(PROM)/"
+	@sudo $(MKDIR) /etc/$(PROM)/
+	@echo "+ sudo $(MKDIR) /var/lib/$(PROM)/"
+	@sudo $(MKDIR) /var/lib/$(PROM)/
+	@echo "+ sudo chown prometheus:prometheus /etc/$(PROM)/"
+	@sudo chown prometheus:prometheus /etc/$(PROM)/
+	@echo "+ sudo chown prometheus:prometheus /var/lib/$(PROM)/"
+	@sudo chown prometheus:prometheus /var/lib/$(PROM)/
+# copia configuração do prometheus, muda a permissão dos arquivos para o usuário prometheus
+	@echo "+ sudo $(CP) configs/prometheus.yml $(PROM_ETC)/"
+	@sudo $(CP) configs/prometheus.yml $(PROM_ETC)/
+	@echo "+ sudo $(CP) configs/alert.rules $(PROM_ETC)/"
+	@sudo $(CP) configs/alert.rules $(PROM_ETC)/
+	@echo "+ sudo chown prometheus:prometheus $(PROM_ETC)/prometheus.yml"
+	@sudo chown prometheus:prometheus $(PROM_ETC)/prometheus.yml
+# copia os arquivos de ui para /etc/prometheus, muda as permissões para o usuário prometheus
+	@echo "+ sudo $(CPR) $(PROM)/consoles/ $(PROM_ETC)/"
+	@sudo $(CPR) $(PROM)/consoles/ $(PROM_ETC)/
+	@echo "+ sudo $(CPR) $(PROM)/console_libraries/ $(PROM_ETC)/"
+	@sudo $(CPR) $(PROM)/console_libraries/ $(PROM_ETC)/ 
+	@echo "+ sudo chown -R prometheus:prometheus $(PROM_ETC)/consoles/"
+	@sudo chown -R prometheus:prometheus $(PROM_ETC)/consoles/
+	@echo "+ sudo chown -R prometheus:prometheus $(PROM_ETC)/console_libraries/"
+	@sudo chown -R prometheus:prometheus $(PROM_ETC)/console_libraries/
+# copia o arquivo de serviço para o systemd, reinicia o systemd, registra e inicia o serviço do prometheus
+	@echo "+ sudo $(CP) configs/prometheus.service $(SYSTEMD)/"
+	@sudo $(CP) configs/prometheus.service $(SYSTEMD)/
+	@echo "+ sudo systemctl daemon-reload"
+	@sudo systemctl daemon-reload
+	@echo "+ sudo systemctl enable prometheus"
+	@sudo systemctl enable prometheus
+	@echo "+ sudo systemctl start prometheus"
+	@sudo systemctl start prometheus
 
-files: directories
-	@echo "=======================\nCopiando arquivos\n=======================\n";  
-	@echo "Copiando 'config/prometheus/*' -> '/home/$(shell whoami)/container/prometheus/'" ; \
-	cp -R configs/prometheus /home/$(shell whoami)/container/ ;
-	@echo "Copiando 'config/web/*' -> '/home/$(shell whoami)/container/web/'" ;\
-	cp -R configs/web /home/$(shell whoami)/container/ ;
-	@echo "Copiando 'nginx-pod.yaml' -> '/home/$(shell whoami)/container/''" ;\
-	cp nginx-pod.yaml /home/$(shell whoami)/container/ ;
-	@echo "-----------------------------\nArquivos copiados com sucesso...\n-----------------------------\n" ;
-
-init_cluster: install_microk8s check_swap
-	@echo "\n=======================\nPronto para iniciar cluster\n=======================\n\n'microk8s status --wait-ready'\n\nCaso nao haja kubectl instalado no sistema, use um alias para o microk8s\nadicione em seu .bashrc ou .zshrc essa linha:\n\talias kubectl='microk8s kubectl'\ncheque os pods, nodes e services com:\n kubectl get services\nkubectl get pods --all-namespaces\nkubectl get nodes\n\npara parar o microk8s use:\nmicrok8s stop e microk8s start para iniciar";
-	
-
-check_swap:
-	@if grep -q "^[^#]" /etc/fstab; then \
-		sudo swapoff -a; \
-		echo "Disable the swap memory on /etc/fstab."; \
+download_prom: 
+	@if test ! -f $(PROM_COMPRESSED); then \
+		echo "+ wget $(PROM_DOWNLOAD_LINK) -O $(PROM_COMPRESSED) --quiet"; \
+		wget $(PROM_DOWNLOAD_LINK) -O $(PROM_COMPRESSED) --quiet; \
+	else \
+		echo "+ prometheus.tar.gz exist"; \
 	fi
+# acima verifica se o arquivo comprimido do prometheus existe, se não existir ele faz o download 
+
+rename_prom_dir:
+	@if test ! -d $(PROM); then \
+		echo "+ tar -xzf $(PROM_COMPRESSED)" ; \
+		tar -xzf $(PROM_COMPRESSED); \
+		echo "+ mv $(PROM_LONG_NAME) $(PROM)" ; \
+		mv $(PROM_LONG_NAME) $(PROM); \
+	else \
+		echo "+ prometheus has already been decompressed"; \
+	fi
+# acima verifica se o diretorio do prometheus descompactado existe, se não existir ele vai descompactar e renomear o diretorio  
+
+check_prom_user:
+	@if test ! $(shell id -u prometheus); then \
+		echo "+ sudo useradd --no-create-home --shell /bin/false $(PROM)"; \
+		sudo useradd --no-create-home --shell /bin/false $(PROM); \
+	else \
+		echo "+ user $(PROM) already exists"; \
+	fi
+# acima faz a verificaçao se o usuario prometheus existe, se não existir ele cria o usuario
+
+check_prom_bin:
+	@if test ! $(shell ls /usr/local/bin | grep -i $(PROM)); then \
+		echo "+ sudo $(CP) $(PROM)/$(PROM) /usr/local/bin/ " ; \
+		sudo $(CP) $(PROM)/$(PROM) /usr/local/bin/ ; \
+		echo "+ sudo $(CP) $(PROM)/promtool /usr/local/bin/ " ; \
+		sudo $(CP) $(PROM)/promtool /usr/local/bin/  ; \
+		echo "+ sudo chown prometheus:prometheus /usr/local/bin/$(PROM)" ; \
+		sudo chown prometheus:prometheus /usr/local/bin/$(PROM) ; \
+		echo "+ sudo chown prometheus:prometheus /usr/local/bin/promtool" ; \
+		sudo chown prometheus:prometheus /usr/local/bin/promtool ; \
+	else \
+		echo "+ prometheus already copied "; \
+	fi
+# acima verifica se o binario do prometheus e promtools existe, se não existir ele copia o binario para o /usr/local/bin/ e muda a permissão para o usuario prometheus
+
+node_exporter: download_expo rename_expo_dir check_expo_user check_expo_bin
+# copia o arquivo de serviço para o systemd, reinicia o systemd, registra e inicia o serviço do node_exporter 
+	@echo "+ sudo $(CP) configs/node_exporter.service $(SYSTEMD)/"
+	@sudo $(CP) configs/node_exporter.service $(SYSTEMD)/
+	@echo "+ sudo systemctl daemon-reload"
+	@sudo systemctl daemon-reload
+	@echo "+ sudo systemctl enable node_exporter"
+	@sudo systemctl enable node_exporter
+	@echo "+ sudo systemctl start node_exporter"
+	@sudo systemctl start node_exporter
+
+download_expo: 
+	@if test ! -f $(EXPO_COMPRESSED); then \
+		echo "+ wget $(EXPO_DOWNLOAD_LINK) -O $(EXPO_COMPRESSED) --quiet"; \
+		wget $(EXPO_DOWNLOAD_LINK) -O $(EXPO_COMPRESSED) --quiet; \
+	else \
+		echo "+ node_exporter.tar.gz existing "; \
+	fi
+# acima verifica se o arquivo comprimido do node_exporter existe, se não existir ele faz o download 
+
+rename_expo_dir:
+	@if test ! -d $(EXPO); then \
+		echo "+ tar -xzf $(EXPO_COMPRESSED)" ; \
+		tar -xzf $(EXPO_COMPRESSED); \
+		echo "+ mv $(EXPO_LONG_NAME) $(EXPO)" ; \
+		mv $(EXPO_LONG_NAME) $(EXPO); \
+	else \
+		echo "+ node_exporter has already been decompressed"; \
+	fi
+# acima verifica se o diretorio do node_exporter descompactado existe, se não existir ele vai descompactar e renomear o diretorio
+
+check_expo_user:
+	@if test ! $(shell id -u node_exporter ); then \
+		echo "+ sudo useradd --no-create-home --shell /bin/false $(EXPO)"; \
+		sudo useradd --no-create-home --shell /bin/false $(EXPO); \
+    else \
+		echo "+ user node_exporter already exists"; \
+    fi
+# acima faz a verificaçao se o usuario node_exporter existe, se não existir ele cria o usuario
+
+check_expo_bin:
+	@if test ! $(shell ls /usr/local/bin | grep -i $(EXPO)); then \
+		echo "+ sudo $(CP) $(EXPO)/$(EXPO) /usr/local/bin/" ; \
+        sudo $(CP) $(EXPO)/$(EXPO) /usr/local/bin/ ; \
+		echo "+ sudo chown node_exporter:node_exporter /usr/local/bin/$(EXPO)" ; \
+		sudo chown node_exporter:node_exporter /usr/local/bin/$(EXPO) ; \
+	else \
+		echo "+ node_exporter already copied"; \
+	fi
+# acima verifica se o binario do node_exporter existe, se não existir ele copia o binario para o /usr/local/bin/ e muda a permissão para o usuario node_exporter
+
+grafana: grafana_add_repo
+# faz a instalação do grafana via gerenciador de pacotes (apt), reiniar o systemd e inicia o serviço do grafana
+	@echo "+ sudo $(MPKG) install -y -qq grafana > /dev/null"
+	@sudo $(MPKG) install -y -qq grafana > /dev/null
+	@echo "+ systemctl daemon-reload"
+	@sudo systemctl daemon-reload
+	@echo "+ sudo systemctl start grafana-server"
+	@sudo systemctl start grafana-server
+
+grafana_key:
+	@echo "+ sudo wget -q -O /usr/share/keyrings/grafana.key https://apt.grafana.com/gpg.key"
+	@sudo wget -q -O /usr/share/keyrings/grafana.key https://apt.grafana.com/gpg.key
+# acima faz o download da chave do grafana
+
+grafana_add_repo: grafana_key
+	@if test ! -f $(ls /etc/apt/sources.list.d | grep -i grafana); then \
+		echo "deb [signed-by=/usr/share/keyrings/grafana.key] https://apt.grafana.com stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list ; \
+		echo " + $(MPKG) update -qq > /dev/null  " ; \
+		sudo $(MPKG) update -qq > /dev/null ; \
+	else: \
+		echo "+ grafana apt repository already exists "; \
+	fi
+# acima verifica se o repositorio do grafana existe, se não existir ele adiciona o repositorio do grafana
+
+clear:
+# remove os arquivos baixados e descompactados
+	@echo "+ $(RM) $(PROM) $(PROM_COMPRESSED)"
+	@$(RM) $(PROM) $(PROM_COMPRESSED) 
+	@echo "+ $(RM) $(EXPO) $(EXPO_COMPRESSED)"
+	@$(RM) $(EXPO) $(EXPO_COMPRESSED)
+
+# TODO: testar instalação de Node Exporter
+# TODO: testar instalação do Grafana
