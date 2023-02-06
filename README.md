@@ -1,6 +1,7 @@
-
-# :whale: single-k8s 
-
+ <div style="display: flex; flex-flow: row nowrap; padding: 5px 0 15px 15px; align-items: center;">
+ <img src="https://cdn.icon-icons.com/icons2/2699/PNG/512/kubernetes_logo_icon_168359.png" width="64" height="64"/>
+ <h1 style="border: none; margin: 0; padding: 0; padding-left: 10px;" > single-k8s</h1>
+ </div>
   
 
 > The script installs  Kubernetes with [microk8s](https://microk8s.io/#install-microk8s) and a stack for monitoring. 
