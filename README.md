@@ -13,7 +13,7 @@ This repository contains the files needed to a service and pod with the  monitor
 [Node Exporter](https://prometheus.io/docs/guides/node-exporter/) :heavy_check_mark:,
 [Grafana](https://grafana.com/docs/grafana/latest/installation/debian/) :hourglass:
 
-## **:pushpin: Before installation**
+## **:pushpin: Requirements:**
 Installs the [make](https://www.gnu.org/software/make/) using your  package manager.
 ```bash
 sudo apt install make
