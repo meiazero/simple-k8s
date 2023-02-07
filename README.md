@@ -53,9 +53,8 @@ _delete the repository and make sure the 'container' directory is created in you
 ```bash
 microk8s status  --wait-ready
 ```
-<hr/>
 
-### **:grin: More :**
+## **:grin: More :**
 Read the documentation on [microk8s.io](https://microk8s.io/docs) :book:
 <hr/>
 
