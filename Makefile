@@ -193,6 +193,8 @@ grafana: grafana_add_repo
 	@sudo $(MPKG) install -y -qq grafana > /dev/null
 	@echo "+ systemctl daemon-reload"
 	@sudo systemctl daemon-reload
+	@echo "+ sudo systemctl enable grafana-server"
+	@sudo systemctl enable grafana-server
 	@echo "+ sudo systemctl start grafana-server"
 	@sudo systemctl start grafana-server
 

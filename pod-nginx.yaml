@@ -1,18 +1,18 @@
 apiVersion: v1 # versao da api
 kind: Pod # tipo de aplicacao kubernetes
 metadata:
-  name: nginx-pod # nome do pod, ao criar um novo deve ser mudado
+  name: pod-nginx1 # nome do pod, ao criar um novo deve ser mudado
   namespace: devpods # namespace do pod
   labels:
-    app.kubernetes.io/app: nginx-app # label do pod, deve ser mudado ao criar um novo
+    app.kubernetes.io/app: app-nginx1 # label do pod, deve ser mudado ao criar um novo
 spec:
   containers:
-    - name: nginx-pod # nome do container, deve ser personalizado ao criar novos
+    - name: pod-nginx1 # nome do container, deve ser personalizado ao criar novos
       image: nginx:latest # imagem do container
       ports:
         - name: http # nome da porta
           containerPort: 80 # porta do container
-          hostPort: 3000 # porta do host
+          hostPort: 5000 # porta do host
       volumeMounts:
         - name: nginx-html # nome do volume do container
           mountPath: "/usr/share/nginx/html/" # path do volume onde ha os arquivos html do nginx
@@ -25,11 +25,11 @@ spec:
 apiVersion: v1 # versao da api
 kind: Service # tipo de aplicacao kubernetes
 metadata:
-  name: nginx-service # nome do service
+  name: service-nginx1 # nome do service
   namespace: devpods # namespace do service
 spec:
   selector:
-    app.kubernetes.io/name: nginx-app # label do pod
+    app.kubernetes.io/name: app-nginx1 # label do pod
   type: NodePort # tipo de service
   ports:
     - protocol: TCP # protocolo do container
