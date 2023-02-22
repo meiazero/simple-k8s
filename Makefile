@@ -44,14 +44,31 @@ dir:
 	@echo "+ $(MKDIR) /etc/apt/keyrings/"
 	@sudo mkdir -p /etc/apt/keyrings/ 
 	
-files: dir
-	@echo "+ $(CPR) configs/web/ $(DIR)/container/" 
-	@$(CPR) configs/web/ $(DIR)/container/
-	@echo "+ $(CP) nginx-pod.yaml $(DIR)/container/"
-	@$(CP) pod-nginx.yaml $(DIR)/container/
-	@echo "+ $(CP) deploy-nginx.yaml $(DIR)/container/"
-	@$(CP) deploy-nginx.yaml $(DIR)/container 
+files: pod_file deploy_file web_dir
 
+pod_file: 
+	@if test ! $(shell ls $(DIR)/container/ | grep -i pod | cut -d '-' -f1); then \
+		echo "+ $(CP) nginx-pod.yaml $(DIR)/container/" ; \
+		$(CP) pod-nginx.yaml $(DIR)/container/ ; \
+	else \
+		echo "+ pod file already copied"; \
+	fi
+
+deploy_file:
+	@if test ! $(shell ls $(DIR)/container/ | grep -i deploy | cut -d '-' -f1); then \
+		echo "+ $(CP) deploy-nginx.yaml $(DIR)/container/" ; \
+		$(CP) deploy-nginx.yaml $(DIR)/container ; \
+	else \
+		echo "+ deploy file already copied"; \
+	fi
+
+web_dir:
+	@if test ! $(shell ls $(DIR)/container/ | grep web); then \
+		echo "+ $(CPR) configs/web/ $(DIR)/container/" ; \
+		$(CPR) configs/web/ $(DIR)/container/ ; \
+	else \
+		echo "+ web dir already copied"; \
+	fi
 microk8s:
 	@if test !  $(shell ls /snap/bin | grep -i microk8s | cut -d '.' -f3 | tr -d '[:space:]'); then \
 		echo "+ sudo snap install microk8s --classic > /dev/null" ; \
@@ -60,43 +77,24 @@ microk8s:
 		echo "+ microk8s installed"; \
 	fi
 
-prometheus: download_prom rename_prom_dir check_prom_user check_prom_bin
-# cria o diretorio do prometheus em /etc e /var/lib, depois muda as permissões dele 
-	@echo "+ sudo $(MKDIR) /etc/$(PROM)/"
-	@sudo $(MKDIR) /etc/$(PROM)/
-	@echo "+ sudo $(MKDIR) /var/lib/$(PROM)/"
-	@sudo $(MKDIR) /var/lib/$(PROM)/
-	@echo "+ sudo chown prometheus:prometheus /etc/$(PROM)/"
-	@sudo chown prometheus:prometheus /etc/$(PROM)/
-	@echo "+ sudo chown prometheus:prometheus /var/lib/$(PROM)/"
-	@sudo chown prometheus:prometheus /var/lib/$(PROM)/
-# copia configuração do prometheus, muda a permissão dos arquivos para o usuário prometheus
-	@echo "+ sudo $(CP) configs/prometheus.yml $(PROM_ETC)/"
-	@sudo $(CP) configs/prometheus.yml $(PROM_ETC)/
-	@echo "+ sudo $(CP) configs/alert.rules $(PROM_ETC)/"
-	@sudo $(CP) configs/alert.rules $(PROM_ETC)/
-	@echo "+ sudo chown prometheus:prometheus $(PROM_ETC)/prometheus.yml"
-	@sudo chown prometheus:prometheus $(PROM_ETC)/prometheus.yml
-# copia os arquivos de ui para /etc/prometheus, muda as permissões para o usuário prometheus
-	@echo "+ sudo $(CPR) $(PROM)/consoles/ $(PROM_ETC)/"
-	@sudo $(CPR) $(PROM)/consoles/ $(PROM_ETC)/
-	@echo "+ sudo $(CPR) $(PROM)/console_libraries/ $(PROM_ETC)/"
-	@sudo $(CPR) $(PROM)/console_libraries/ $(PROM_ETC)/ 
-	@echo "+ sudo chown -R prometheus:prometheus $(PROM_ETC)/consoles/"
-	@sudo chown -R prometheus:prometheus $(PROM_ETC)/consoles/
-	@echo "+ sudo chown -R prometheus:prometheus $(PROM_ETC)/console_libraries/"
-	@sudo chown -R prometheus:prometheus $(PROM_ETC)/console_libraries/
-# copia o arquivo de serviço para o systemd, reinicia o systemd, registra e inicia o serviço do prometheus
-	@echo "+ sudo $(CP) configs/prometheus.service $(SYSTEMD)/"
-	@sudo $(CP) configs/prometheus.service $(SYSTEMD)/
-	@echo "+ sudo systemctl daemon-reload"
-	@sudo systemctl daemon-reload
-	@echo "+ sudo systemctl enable prometheus"
-	@sudo systemctl enable prometheus
-	@echo "+ sudo systemctl start prometheus"
-	@sudo systemctl start prometheus
+prometheus: prom_dir  prom_configs prom_ui prom_svc
 
-download_prom: 
+prom_svc:
+# copia o arquivo de serviço para o systemd, reinicia o systemd, registra e inicia o serviço do prometheus
+	@if test ! -f $(SYSTEMD)/prometheus.service; then \
+		echo "+ sudo $(CP) configs/prometheus.service $(SYSTEMD)/" ; \
+		sudo $(CP) configs/prometheus.service $(SYSTEMD)/ ; \
+		echo "+ sudo systemctl daemon-reload" ; \
+		sudo systemctl daemon-reload ; \
+		echo "+ sudo systemctl enable prometheus" ; \
+		sudo systemctl enable prometheus ; \
+		echo "+ sudo systemctl start prometheus" ; \
+		sudo systemctl start prometheus ; \
+	else \
+		echo "+ prometheus service already created"; \
+	fi
+
+prom_download:
 	@if test ! -f $(PROM_COMPRESSED); then \
 		echo "+ wget $(PROM_DOWNLOAD_LINK) -O $(PROM_COMPRESSED) --quiet"; \
 		wget $(PROM_DOWNLOAD_LINK) -O $(PROM_COMPRESSED) --quiet; \
@@ -105,7 +103,22 @@ download_prom:
 	fi
 # acima verifica se o arquivo comprimido do prometheus existe, se não existir ele faz o download 
 
-rename_prom_dir:
+prom_dir: prom_download rename_prom_dir
+# cria o diretorio do prometheus em /etc e /var/lib, depois muda as permissões dele 
+	@if test ! -d /etc/$(PROM); then \
+		echo "+ sudo $(MKDIR) /etc/$(PROM)/" ; \
+		sudo $(MKDIR) /etc/$(PROM)/ ; \
+		echo "+ sudo $(MKDIR) /var/lib/$(PROM)/" ; \
+		sudo $(MKDIR) /var/lib/$(PROM)/ ; \
+		echo "+ sudo chown prometheus:prometheus /etc/$(PROM)/" ; \
+		sudo chown prometheus:prometheus /etc/$(PROM)/ ; \
+		echo "+ sudo chown prometheus:prometheus /var/lib/$(PROM)/" ; \
+		sudo chown prometheus:prometheus /var/lib/$(PROM)/ ; \
+	else \
+		echo "+ prometheus directories already created"; \
+	fi
+
+rename_prom_dir: check_prom_user
 	@if test ! -d $(PROM); then \
 		echo "+ tar -xzf $(PROM_COMPRESSED)" ; \
 		tar -xzf $(PROM_COMPRESSED); \
@@ -140,18 +153,53 @@ check_prom_bin:
 	fi
 # acima verifica se o binario do prometheus e promtools existe, se não existir ele copia o binario para o /usr/local/bin/ e muda a permissão para o usuario prometheus
 
-node_exporter: download_expo rename_expo_dir check_expo_user check_expo_bin
-# copia o arquivo de serviço para o systemd, reinicia o systemd, registra e inicia o serviço do node_exporter 
-	@echo "+ sudo $(CP) configs/node_exporter.service $(SYSTEMD)/"
-	@sudo $(CP) configs/node_exporter.service $(SYSTEMD)/
-	@echo "+ sudo systemctl daemon-reload"
-	@sudo systemctl daemon-reload
-	@echo "+ sudo systemctl enable node_exporter"
-	@sudo systemctl enable node_exporter
-	@echo "+ sudo systemctl start node_exporter"
-	@sudo systemctl start node_exporter
+prom_configs: 
+	@if test ! $(shell ls $(PROM_ETC)/ | grep -i $(PROM)); then \
+		echo "+ sudo $(CP) configs/prometheus.yml $(PROM_ETC)/" ; \
+		sudo $(CP) configs/prometheus.yml $(PROM_ETC)/ ; \
+		echo "+ sudo $(CP) configs/alert.rules $(PROM_ETC)/" ; \
+		sudo $(CP) configs/alert.rules $(PROM_ETC)/ ; \
+		echo "+ sudo chown $(PROM):$(PROM) $(PROM_ETC)/prometheus.yml" ; \
+		sudo chown $(PROM):$(PROM) $(PROM_ETC)/prometheus.yml ; \
+		echo "+ sudo chown $(PROM):$(PROM) $(PROM_ETC)/alert.rules" ; \
+		sudo chown $(PROM):$(PROM) $(PROM_ETC)/alert.rules ; \
+	else \
+		echo "+ prometheus configs already copied"; \
+	fi
 
-download_expo: 
+prom_ui:
+	@if test ! -d $(PROM_ETC)/consoles/; then \
+		echo "+ sudo $(CPR) $(PROM)/consoles/ $(PROM_ETC)/" ; \
+		sudo $(CPR) $(PROM)/consoles/ $(PROM_ETC)/ ; \
+		echo "+ sudo $(CPR) $(PROM)/console_libraries/ $(PROM_ETC)/" ; \
+		sudo $(CPR) $(PROM)/console_libraries/ $(PROM_ETC)/ ; \
+		echo "+ sudo chown -R prometheus:prometheus $(PROM_ETC)/consoles/" ; \
+		sudo chown -R prometheus:prometheus $(PROM_ETC)/consoles/ ; \
+		echo "+ sudo chown -R prometheus:prometheus $(PROM_ETC)/console_libraries/" ; \
+		sudo chown -R prometheus:prometheus $(PROM_ETC)/console_libraries/ ; \
+	else \
+		echo "+ prometheus ui already copied" ; \
+	fi
+
+node_exporter: expo_download expo_user_check expo_svc
+
+
+expo_svc:
+# copia o arquivo de serviço para o systemd, reinicia o systemd, registra e inicia o serviço do node_exporter 
+	@if test ! -f $(SYSTEMD)/node_exporter.service; then \
+		echo "+ sudo $(CP) configs/node_exporter.service $(SYSTEMD)/" ; \
+		sudo $(CP) configs/node_exporter.service $(SYSTEMD)/ ; \
+		echo "+ sudo systemctl daemon-reload" ; \
+		sudo systemctl daemon-reload ; \
+		echo "+ sudo systemctl enable node_exporter" ; \
+		sudo systemctl enable node_exporter ; \
+		echo "+ sudo systemctl start node_exporter" ; \
+		sudo systemctl start node_exporter ; \
+	else \
+		echo "+ node_exporter service already copied"; \
+	fi
+
+expo_download:
 	@if test ! -f $(EXPO_COMPRESSED); then \
 		echo "+ wget $(EXPO_DOWNLOAD_LINK) -O $(EXPO_COMPRESSED) --quiet"; \
 		wget $(EXPO_DOWNLOAD_LINK) -O $(EXPO_COMPRESSED) --quiet; \
@@ -160,7 +208,7 @@ download_expo:
 	fi
 # acima verifica se o arquivo comprimido do node_exporter existe, se não existir ele faz o download 
 
-rename_expo_dir:
+expo_dir_rename:
 	@if test ! -d $(EXPO); then \
 		echo "+ tar -xzf $(EXPO_COMPRESSED)" ; \
 		tar -xzf $(EXPO_COMPRESSED); \
@@ -171,7 +219,7 @@ rename_expo_dir:
 	fi
 # acima verifica se o diretorio do node_exporter descompactado existe, se não existir ele vai descompactar e renomear o diretorio
 
-check_expo_user:
+expo_user_check: expo_dir_rename expo_bin_check
 	@if test ! $(shell id -u node_exporter ); then \
 		echo "+ sudo useradd --no-create-home --shell /bin/false $(EXPO)"; \
 		sudo useradd --no-create-home --shell /bin/false $(EXPO); \
@@ -180,7 +228,7 @@ check_expo_user:
     fi
 # acima faz a verificaçao se o usuario node_exporter existe, se não existir ele cria o usuario
 
-check_expo_bin:
+expo_bin_check:
 	@if test ! $(shell ls /usr/local/bin | grep -i $(EXPO)); then \
 		echo "+ sudo $(CP) $(EXPO)/$(EXPO) /usr/local/bin/" ; \
         sudo $(CP) $(EXPO)/$(EXPO) /usr/local/bin/ ; \
@@ -191,16 +239,26 @@ check_expo_bin:
 	fi
 # acima verifica se o binario do node_exporter existe, se não existir ele copia o binario para o /usr/local/bin/ e muda a permissão para o usuario node_exporter
 
-grafana: grafana_key grafana_add_repo
+grafana: grafana_install
+	@if test ! $(shell ls /usr/lib/systemd/system/ | grep -i grafana ); then \
+		echo "+ systemctl daemon-reload" ; \
+		sudo systemctl daemon-reload ; \
+		echo "+ sudo systemctl enable grafana-server" ; \
+		sudo systemctl enable grafana-server ; \
+		echo "+ sudo systemctl start grafana-server" ; \
+		sudo systemctl start grafana-server ; \
+	else \
+		echo "+ grafana service already started"; \
+	fi
+
+grafana_install: grafana_key grafana_add_repo
 # faz a instalação do grafana via gerenciador de pacotes (apt), reiniar o systemd e inicia o serviço do grafana
-	@echo "+ sudo $(MPKG) install -y -qq grafana > /dev/null"
-	@sudo $(MPKG) install -y -qq grafana > /dev/null
-	@echo "+ systemctl daemon-reload"
-	@sudo systemctl daemon-reload
-	@echo "+ sudo systemctl enable grafana-server"
-	@sudo systemctl enable grafana-server
-	@echo "+ sudo systemctl start grafana-server"
-	@sudo systemctl start grafana-server
+	@if test ! $(shell which grafana-server); then \
+		echo "+ sudo $(MPKG) install -y -qq grafana > /dev/null" ; \
+		sudo $(MPKG) install -y -qq grafana > /dev/null ; \
+	else \
+		echo "+ grafana already installed"; \
+	fi
 
 grafana_add_repo: grafana_key
 	@if test ! $(shell ls /etc/apt/sources.list.d | grep -i grafana); then \
@@ -214,9 +272,13 @@ grafana_add_repo: grafana_key
 # acima verifica se o repositorio do grafana existe, se não existir ele adiciona o repositorio do grafana
 
 grafana_key:
-	@echo "+ sudo wget -q -O /usr/share/keyrings/grafana.key https://apt.grafana.com/gpg.key"
-	@sudo wget -q -O /usr/share/keyrings/grafana.key https://apt.grafana.com/gpg.key
 # acima faz o download da chave do grafana
+	@if test ! $(shell ls /usr/share/keyrings | grep -i grafana); then \
+		echo "+ sudo wget -q -O /usr/share/keyrings/grafana.key https://apt.grafana.com/gpg.key" ; \
+		sudo wget -q -O /usr/share/keyrings/grafana.key https://apt.grafana.com/gpg.key ; \
+	else \
+		echo "+ download grafana key to /usr/share/keyrings"; \
+	fi
 
 kubernetes: install_k8s
 	@echo "+ sudo apt-mark hold kubeadm kubelet kubectl"
@@ -245,9 +307,20 @@ kubernetes_add_repo:
 		echo "+ kubernetes apt repository already exists "; \
 	fi
 
-clear:
-# remove os arquivos baixados e descompactados
-	@echo "+ $(RM) $(PROM) $(PROM_COMPRESSED)"
-	@$(RM) $(PROM) $(PROM_COMPRESSED) 
-	@echo "+ $(RM) $(EXPO) $(EXPO_COMPRESSED)"
-	@$(RM) $(EXPO) $(EXPO_COMPRESSED)
+clear: prom_clear expo_clear
+
+prom_clear:
+	@if test $(shell ls | grep -i $(PROM)); then \
+		echo "+ $(RM) $(PROM) $(PROM_COMPRESSED)" ; \
+		$(RM) $(PROM) $(PROM_COMPRESSED) ; \
+	else \
+		echo "+ Prometheus already clear"; \
+	fi
+	
+expo_clear:
+	@if test $(shell ls | grep -i $(EXPO)); then \
+		echo "+ $(RM) $(EXPO) $(EXPO_COMPRESSED)" ; \
+		$(RM) $(EXPO) $(EXPO_COMPRESSED) ; \
+	else \
+		echo "+ Node Exporter already clear"; \
+	fi 
