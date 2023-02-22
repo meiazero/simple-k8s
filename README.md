@@ -12,7 +12,7 @@ This repository contains the files needed to a service and pod with the  monitor
 [Prometheus](https://prometheus.io/docs/introduction/overview/) :heavy_check_mark:,
 [Node Exporter](https://prometheus.io/docs/guides/node-exporter/) :heavy_check_mark:,
 [Grafana](https://grafana.com/docs/grafana/latest/installation/debian/) :hourglass:, 
-[kubernetes](kubernetes.io/) :hourglass:
+[kubernetes](https://kubernetes.io/) :hourglass:
 
 ## **:pushpin: Requirements:**
 Installs the [make](https://www.gnu.org/software/make/) using your  package manager.
