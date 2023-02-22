@@ -3,7 +3,7 @@
 
 > The script installs  Kubernetes with [microk8s](https://microk8s.io/#install-microk8s) and a stack for monitoring. 
  
-This repository contains the files needed to a service and pod with the  monitoring stack using  [prometheus](https://prometheus.io/docs/introduction/overview/), [node_exporter](https://prometheus.io/docs/guides/node-exporter/) and [grafana](https://grafana.com/docs/grafana/latest/installation/debian/).
+This repository contains the files needed to a service and pod with the  monitoring stack using  [prometheus](https://prometheus.io/docs/introduction/overview/), [node exporter](https://prometheus.io/docs/guides/node-exporter/) and [grafana](https://grafana.com/docs/grafana/latest/installation/debian/).
 
 :warning: The script is restricted for study, and designed for use on Ubuntu and Debian derivatives, don't use it on production or your personal machine.
 
