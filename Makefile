@@ -203,9 +203,9 @@ grafana: grafana_add_repo
 grafana_add_repo: grafana_key
 	@if test ! $(shell ls /etc/apt/sources.list.d | grep -i grafana); then \
 		echo "deb [signed-by=/usr/share/keyrings/grafana.key] https://apt.grafana.com stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list ; \
-		echo " + $(MPKG) update -qq > /dev/null  " ; \
+		echo "+ $(MPKG) update -qq > /dev/null  " ; \
 		sudo $(MPKG) update -qq > /dev/null ; \
-	else: \
+	else \
 		echo "+ grafana apt repository already exists "; \
 	fi
 # acima verifica se o repositorio do grafana existe, se não existir ele adiciona o repositorio do grafana
