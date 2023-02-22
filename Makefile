@@ -201,7 +201,7 @@ grafana: grafana_add_repo
 	@sudo systemctl start grafana-server
 
 grafana_add_repo: grafana_key
-	@if test ! -f $(ls /etc/apt/sources.list.d | grep -i grafana); then \
+	@if test ! $(shell ls /etc/apt/sources.list.d | grep -i grafana); then \
 		echo "deb [signed-by=/usr/share/keyrings/grafana.key] https://apt.grafana.com stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list ; \
 		echo " + $(MPKG) update -qq > /dev/null  " ; \
 		sudo $(MPKG) update -qq > /dev/null ; \
