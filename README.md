@@ -11,7 +11,7 @@ This repository contains the files needed to a service and pod with the  monitor
 [microk8s](https://microk8s.io/#install-microk8s) :heavy_check_mark:,
 [Prometheus](https://prometheus.io/docs/introduction/overview/) :heavy_check_mark:,
 [Node Exporter](https://prometheus.io/docs/guides/node-exporter/) :heavy_check_mark:,
-[Grafana](https://grafana.com/docs/grafana/latest/installation/debian/) :hourglass:, 
+[Grafana](https://grafana.com/docs/grafana/latest/installation/debian/) :heavy_check_mark:, 
 [kubernetes](https://kubernetes.io/) :hourglass:
 
 ## **:pushpin: Requirements:**
