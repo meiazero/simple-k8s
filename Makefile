@@ -215,6 +215,30 @@ grafana_key:
 	@sudo wget -q -O /usr/share/keyrings/grafana.key https://apt.grafana.com/gpg.key
 # acima faz o download da chave do grafana
 
+kubernetes: kubernetes_add_repo hold_k8s
+# faz a instalação do kubernetes via gerenciador de pacotes (apt), reiniar o systemd e inicia o serviço do kubernetes
+	@echo "+ sudo $(MPKG) install -y -qq kubeadm kubelet kubectl > /dev/null"
+	@sudo $(MPKG) install -y -qq kubeadm kubelet kubectl > /dev/null
+	@echo "+ systemctl daemon-reload"
+	@sudo systemctl daemon-reload
+	@echo "+ sudo systemctl enable kubelet"
+	@sudo systemctl enable kubelet
+	@echo "+ sudo systemctl start kubelet"
+	@sudo systemctl start kubelet
+
+hold_k8s:
+	@echo "+ sudo apt-mark hold kubeadm kubelet kubectl"
+	@sudo apt-mark hold kubeadm kubelet kubectl
+
+kubernetes_add_repo:
+	@if test ! $(shell ls /etc/apt/sources.list.d | grep -i kubernetes); then \
+		echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list ; \
+		echo " + $(MPKG) update -qq > /dev/null  " ; \
+		sudo $(MPKG) update -qq > /dev/null ; \
+	else: \
+		echo "+ kubernetes apt repository already exists "; \
+	fi
+
 clear:
 # remove os arquivos baixados e descompactados
 	@echo "+ $(RM) $(PROM) $(PROM_COMPRESSED)"
