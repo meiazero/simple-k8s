@@ -5,7 +5,7 @@
  
 This repository contains the files needed to a service and pod with the  monitoring stack using  [prometheus](https://prometheus.io/docs/introduction/overview/), [node_exporter](https://prometheus.io/docs/guides/node-exporter/) and [grafana](https://grafana.com/docs/grafana/latest/installation/debian/).
 
-:warning: The script is restricted for studies, don't use it in production or on your personal machine.
+:warning: The script is restricted for study, and designed for use on Ubuntu and Debian derivatives, don't use it on production or your personal machine.
 
 ## **:pencil: What's installing?** 
 [microk8s](https://microk8s.io/#install-microk8s) :heavy_check_mark:,
@@ -15,7 +15,7 @@ This repository contains the files needed to a service and pod with the  monitor
 [kubernetes](https://kubernetes.io/) :hourglass:
 
 ## **:pushpin: Requirements:**
-Installs the [make](https://www.gnu.org/software/make/) using your  package manager.
+Installs the [make](https://www.gnu.org/software/make/) using your package manager, on debian and derivatives use:
 ```bash
 sudo apt install make
 ```
