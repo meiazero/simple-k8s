@@ -41,6 +41,8 @@ debian:
 dir: 
 	@echo "+ $(MKDIR) $(DIR)/container/"
 	@$(MKDIR) $(DIR)/container/
+	@echo "+ $(MKDIR) /etc/apt/keyrings/"
+	@sudo mkdir -p /etc/apt/keyrings/ 
 	
 files: dir
 	@echo "+ $(CPR) configs/web/ $(DIR)/container/" 
@@ -189,7 +191,7 @@ check_expo_bin:
 	fi
 # acima verifica se o binario do node_exporter existe, se não existir ele copia o binario para o /usr/local/bin/ e muda a permissão para o usuario node_exporter
 
-grafana: grafana_add_repo
+grafana: grafana_key grafana_add_repo
 # faz a instalação do grafana via gerenciador de pacotes (apt), reiniar o systemd e inicia o serviço do grafana
 	@echo "+ sudo $(MPKG) install -y -qq grafana > /dev/null"
 	@sudo $(MPKG) install -y -qq grafana > /dev/null
@@ -203,7 +205,7 @@ grafana: grafana_add_repo
 grafana_add_repo: grafana_key
 	@if test ! $(shell ls /etc/apt/sources.list.d | grep -i grafana); then \
 		echo "deb [signed-by=/usr/share/keyrings/grafana.key] https://apt.grafana.com stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list ; \
-		echo "+ $(MPKG) update -qq > /dev/null  " ; \
+		echo " + $(MPKG) update -qq > /dev/null  " ; \
 		sudo $(MPKG) update -qq > /dev/null ; \
 	else \
 		echo "+ grafana apt repository already exists "; \
@@ -215,7 +217,11 @@ grafana_key:
 	@sudo wget -q -O /usr/share/keyrings/grafana.key https://apt.grafana.com/gpg.key
 # acima faz o download da chave do grafana
 
-kubernetes: kubernetes_add_repo hold_k8s
+kubernetes: install_k8s
+	@echo "+ sudo apt-mark hold kubeadm kubelet kubectl"
+	@sudo apt-mark hold kubeadm kubelet kubectl >/dev/null
+
+install_k8s: kubernetes_add_repo
 # faz a instalação do kubernetes via gerenciador de pacotes (apt), reiniar o systemd e inicia o serviço do kubernetes
 	@echo "+ sudo $(MPKG) install -y -qq kubeadm kubelet kubectl > /dev/null"
 	@sudo $(MPKG) install -y -qq kubeadm kubelet kubectl > /dev/null
@@ -226,16 +232,15 @@ kubernetes: kubernetes_add_repo hold_k8s
 	@echo "+ sudo systemctl start kubelet"
 	@sudo systemctl start kubelet
 
-hold_k8s:
-	@echo "+ sudo apt-mark hold kubeadm kubelet kubectl"
-	@sudo apt-mark hold kubeadm kubelet kubectl
-
 kubernetes_add_repo:
 	@if test ! $(shell ls /etc/apt/sources.list.d | grep -i kubernetes); then \
-		echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list ; \
-		echo " + $(MPKG) update -qq > /dev/null  " ; \
+		echo "+ sudo wget -q -O /etc/apt/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg" ; \
+		sudo wget -q -O /etc/apt/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg ; \
+		echo "+ adding kubernetes repository" ; \
+		echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list ; \
+		echo "+ $(MPKG) update -qq > /dev/null  " ; \
 		sudo $(MPKG) update -qq > /dev/null ; \
-	else: \
+	else \
 		echo "+ kubernetes apt repository already exists "; \
 	fi
 
@@ -245,6 +250,3 @@ clear:
 	@$(RM) $(PROM) $(PROM_COMPRESSED) 
 	@echo "+ $(RM) $(EXPO) $(EXPO_COMPRESSED)"
 	@$(RM) $(EXPO) $(EXPO_COMPRESSED)
-
-# TODO: testar instalação de Node Exporter
-# TODO: testar instalação do Grafana
