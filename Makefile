@@ -46,7 +46,9 @@ files: dir
 	@echo "+ $(CPR) configs/web/ $(DIR)/container/" 
 	@$(CPR) configs/web/ $(DIR)/container/
 	@echo "+ $(CP) nginx-pod.yaml $(DIR)/container/"
-	@$(CP) nginx-pod.yaml $(DIR)/container/
+	@$(CP) pod-nginx.yaml $(DIR)/container/
+	@echo "+ $(CP) deploy-nginx.yaml $(DIR)/container/"
+	@$(CP) deploy-nginx.yaml $(DIR)/container 
 
 microk8s:
 	@if test !  $(shell ls /snap/bin | grep -i microk8s | cut -d '.' -f3 | tr -d '[:space:]'); then \
@@ -198,11 +200,6 @@ grafana: grafana_add_repo
 	@echo "+ sudo systemctl start grafana-server"
 	@sudo systemctl start grafana-server
 
-grafana_key:
-	@echo "+ sudo wget -q -O /usr/share/keyrings/grafana.key https://apt.grafana.com/gpg.key"
-	@sudo wget -q -O /usr/share/keyrings/grafana.key https://apt.grafana.com/gpg.key
-# acima faz o download da chave do grafana
-
 grafana_add_repo: grafana_key
 	@if test ! -f $(ls /etc/apt/sources.list.d | grep -i grafana); then \
 		echo "deb [signed-by=/usr/share/keyrings/grafana.key] https://apt.grafana.com stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list ; \
@@ -212,6 +209,11 @@ grafana_add_repo: grafana_key
 		echo "+ grafana apt repository already exists "; \
 	fi
 # acima verifica se o repositorio do grafana existe, se não existir ele adiciona o repositorio do grafana
+
+grafana_key:
+	@echo "+ sudo wget -q -O /usr/share/keyrings/grafana.key https://apt.grafana.com/gpg.key"
+	@sudo wget -q -O /usr/share/keyrings/grafana.key https://apt.grafana.com/gpg.key
+# acima faz o download da chave do grafana
 
 clear:
 # remove os arquivos baixados e descompactados
