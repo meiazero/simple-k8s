@@ -1,24 +1,11 @@
 EXEC = main
 
 FLAVOR = $(shell lsb_release -i | cut -d ':' -f2 | tr -d '[:space:]')
-PROM_DOWNLOAD_LINK = https://github.com/prometheus/prometheus/releases/download/v2.37.5/prometheus-2.37.5.linux-amd64.tar.gz
-EXPO_DOWNLOAD_LINK = https://github.com/prometheus/node_exporter/releases/download/v1.5.0/node_exporter-1.5.0.linux-amd64.tar.gz
-PROM_COMPRESSED = prometheus.tar.gz
-EXPO_COMPRESSED = node_exporter.tar.gz
-PROM_LONG_NAME = prometheus-2.37.5.linux-amd64
-EXPO_LONG_NAME = node_exporter-1.5.0.linux-amd64
 PROM_ETC = /etc/prometheus
-PROM = prometheus
-EXPO = node_exporter
 SYSTEMD= /etc/systemd/system
 USER = $(shell whoami)
-MKDIR = mkdir -p
-DIR = /home/$(USER)
-PWD = $(shell pwd)
 MPKG = apt-get
 RM = rm -rf
-CPR = cp -R
-CP = cp
 
 all: $(EXEC)
 
@@ -38,37 +25,6 @@ debian:
 		echo "+ debian dependencies ok"; \
 	fi
 
-dir: 
-	@echo "+ $(MKDIR) $(DIR)/container/"
-	@$(MKDIR) $(DIR)/container/
-	@echo "+ $(MKDIR) /etc/apt/keyrings/"
-	@sudo mkdir -p /etc/apt/keyrings/ 
-	
-files: pod_file deploy_file web_dir
-
-pod_file: 
-	@if test ! $(shell ls $(DIR)/container/ | grep -i pod | cut -d '-' -f1); then \
-		echo "+ $(CP) nginx-pod.yaml $(DIR)/container/" ; \
-		$(CP) pod-nginx.yaml $(DIR)/container/ ; \
-	else \
-		echo "+ pod file already copied"; \
-	fi
-
-deploy_file:
-	@if test ! $(shell ls $(DIR)/container/ | grep -i deploy | cut -d '-' -f1); then \
-		echo "+ $(CP) deploy-nginx.yaml $(DIR)/container/" ; \
-		$(CP) deploy-nginx.yaml $(DIR)/container ; \
-	else \
-		echo "+ deploy file already copied"; \
-	fi
-
-web_dir:
-	@if test ! $(shell ls $(DIR)/container/ | grep web); then \
-		echo "+ $(CPR) configs/web/ $(DIR)/container/" ; \
-		$(CPR) configs/web/ $(DIR)/container/ ; \
-	else \
-		echo "+ web dir already copied"; \
-	fi
 microk8s:
 	@if test !  $(shell ls /snap/bin | grep -i microk8s | cut -d '.' -f3 | tr -d '[:space:]'); then \
 		echo "+ sudo snap install microk8s --classic > /dev/null" ; \
@@ -94,16 +50,7 @@ prom_svc:
 		echo "+ prometheus service already created"; \
 	fi
 
-prom_download:
-	@if test ! -f $(PROM_COMPRESSED); then \
-		echo "+ wget $(PROM_DOWNLOAD_LINK) -O $(PROM_COMPRESSED) --quiet"; \
-		wget $(PROM_DOWNLOAD_LINK) -O $(PROM_COMPRESSED) --quiet; \
-	else \
-		echo "+ prometheus.tar.gz exist"; \
-	fi
-# acima verifica se o arquivo comprimido do prometheus existe, se não existir ele faz o download 
-
-prom_dir: prom_download rename_prom_dir
+prom_dir:  rename_prom_dir 
 # cria o diretorio do prometheus em /etc e /var/lib, depois muda as permissões dele 
 	@if test ! -d /etc/$(PROM); then \
 		echo "+ sudo $(MKDIR) /etc/$(PROM)/" ; \
@@ -118,18 +65,7 @@ prom_dir: prom_download rename_prom_dir
 		echo "+ prometheus directories already created"; \
 	fi
 
-rename_prom_dir: check_prom_user
-	@if test ! -d $(PROM); then \
-		echo "+ tar -xzf $(PROM_COMPRESSED)" ; \
-		tar -xzf $(PROM_COMPRESSED); \
-		echo "+ mv $(PROM_LONG_NAME) $(PROM)" ; \
-		mv $(PROM_LONG_NAME) $(PROM); \
-	else \
-		echo "+ prometheus has already been decompressed"; \
-	fi
-# acima verifica se o diretorio do prometheus descompactado existe, se não existir ele vai descompactar e renomear o diretorio  
-
-check_prom_user:
+check_prom_user: check_prom_user
 	@if test ! $(shell id -u prometheus); then \
 		echo "+ sudo useradd --no-create-home --shell /bin/false $(PROM)"; \
 		sudo useradd --no-create-home --shell /bin/false $(PROM); \
@@ -181,8 +117,7 @@ prom_ui:
 		echo "+ prometheus ui already copied" ; \
 	fi
 
-node_exporter: expo_download expo_user_check expo_svc
-
+node_exporter: expo_user_check expo_svc
 
 expo_svc:
 # copia o arquivo de serviço para o systemd, reinicia o systemd, registra e inicia o serviço do node_exporter 
@@ -198,28 +133,9 @@ expo_svc:
 	else \
 		echo "+ node_exporter service already copied"; \
 	fi
+ifica se o diretorio do node_exporter descompactado existe, se não existir ele vai descompactar e renomear o diretorio
 
-expo_download:
-	@if test ! -f $(EXPO_COMPRESSED); then \
-		echo "+ wget $(EXPO_DOWNLOAD_LINK) -O $(EXPO_COMPRESSED) --quiet"; \
-		wget $(EXPO_DOWNLOAD_LINK) -O $(EXPO_COMPRESSED) --quiet; \
-	else \
-		echo "+ node_exporter.tar.gz existing "; \
-	fi
-# acima verifica se o arquivo comprimido do node_exporter existe, se não existir ele faz o download 
-
-expo_dir_rename:
-	@if test ! -d $(EXPO); then \
-		echo "+ tar -xzf $(EXPO_COMPRESSED)" ; \
-		tar -xzf $(EXPO_COMPRESSED); \
-		echo "+ mv $(EXPO_LONG_NAME) $(EXPO)" ; \
-		mv $(EXPO_LONG_NAME) $(EXPO); \
-	else \
-		echo "+ node_exporter has already been decompressed"; \
-	fi
-# acima verifica se o diretorio do node_exporter descompactado existe, se não existir ele vai descompactar e renomear o diretorio
-
-expo_user_check: expo_dir_rename expo_bin_check
+expo_user_check: expo_bin_check
 	@if test ! $(shell id -u node_exporter ); then \
 		echo "+ sudo useradd --no-create-home --shell /bin/false $(EXPO)"; \
 		sudo useradd --no-create-home --shell /bin/false $(EXPO); \
@@ -297,6 +213,8 @@ install_k8s: kubernetes_add_repo
 
 kubernetes_add_repo:
 	@if test ! $(shell ls /etc/apt/sources.list.d | grep -i kubernetes); then \
+		echo "+ $(MKDIR) /etc/apt/keyrings/"
+		sudo mkdir -p /etc/apt/keyrings/ 
 		echo "+ sudo wget -q -O /etc/apt/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg" ; \
 		sudo wget -q -O /etc/apt/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg ; \
 		echo "+ adding kubernetes repository" ; \
