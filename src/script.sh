@@ -34,3 +34,10 @@ while true; do
     esac
 done
 
+# Function to install dependencies
+dependecies() {
+    echo "+ sudo apt update -qq >/dev/null"
+    sudo apt update -qq >/dev/null
+    echo "+ sudo apt install -qq -y curl git snapd adduser apt-transport-https software-properties-common wget >/dev/null"
+    sudo apt install -qq -y curl git snapd adduser apt-transport-https software-properties-common wget >/dev/null
+}
