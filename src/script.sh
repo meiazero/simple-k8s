@@ -41,3 +41,11 @@ dependecies() {
     echo "+ sudo apt install -qq -y curl git snapd adduser apt-transport-https software-properties-common wget >/dev/null"
     sudo apt install -qq -y curl git snapd adduser apt-transport-https software-properties-common wget >/dev/null
 }
+
+# Function to verify if the directory exists on user home, if not, create it
+verify_dir() {
+    if [ ! -d "$HOME/container" ]; then
+        echo "+ mkdir -p '$HOME/container'"
+        mkdir -p "$HOME/container"
+    fi
+}
