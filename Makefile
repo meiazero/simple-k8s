@@ -4,5 +4,5 @@ EXEC = main
 
 all: $(EXEC)
 
-$(EXEC):
+$(EXEC): 
 	@$(PXX) $(SRC)
