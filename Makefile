@@ -280,6 +280,14 @@ grafana_key:
 		echo "+ download grafana key to /usr/share/keyrings"; \
 	fi
 
+docker: 
+	@echo "+ sudo $(MPKG) install -y -qq docker.io > /dev/null"
+	sudo $(MPKG) install -y -qq docker.io > /dev/null
+	@echo "+ sudo systemctl enable docker"
+	sudo systemctl enable docker
+	@echo "+ sudo systemctl start docker"
+	sudo systemctl start docker
+
 kubernetes: install_k8s
 	@echo "+ sudo apt-mark hold kubeadm kubelet kubectl"
 	@sudo apt-mark hold kubeadm kubelet kubectl >/dev/null
