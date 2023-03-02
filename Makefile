@@ -22,7 +22,7 @@ CP = cp
 
 all: $(EXEC)
 
-$(EXEC): dependencies files prometheus node_exporter grafana
+$(EXEC): dependencies dir files prometheus node_exporter grafana
 
 dependencies: 
 	@echo "+ sudo $(MPKG) update -qq >/dev/null"
