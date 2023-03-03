@@ -1,37 +1,34 @@
-apiVersion: v1 # versao da api
-kind: Pod # tipo de aplicacao kubernetes
+apiVersion: v1
+kind: Namespace
 metadata:
-  name: pod-nginx1 # nome do pod, ao criar um novo deve ser mudado
-  namespace: devpods # namespace do pod
-  labels:
-    app.kubernetes.io/app: app-nginx1 # label do pod, deve ser mudado ao criar um novo
-spec:
-  containers:
-    - name: pod-nginx1 # nome do container, deve ser personalizado ao criar novos
-      image: nginx:latest # imagem do container
-      ports:
-        - name: http # nome da porta
-          containerPort: 80 # porta do container
-          hostPort: 5000 # porta do host
-      volumeMounts:
-        - name: nginx-html # nome do volume do container
-          mountPath: "/usr/share/nginx/html/" # path do volume onde ha os arquivos html do nginx
-  volumes:
-    - name: nginx-html # nome do volume do host
-      hostPath:
-        path: "/home/emanuel/container/web" # caminho do diretorio onde os arquivos devem estar
-
+    name: devpods
 ---
-apiVersion: v1 # versao da api
-kind: Service # tipo de aplicacao kubernetes
+apiVersion: v1
+kind: Pod
 metadata:
-  name: service-nginx1 # nome do service
-  namespace: devpods # namespace do service
+    name: pod-ngx
+    namespace: devpods
+    labels:
+        app.kubernetes.io/app: ngx-app
 spec:
-  selector:
-    app.kubernetes.io/name: app-nginx1 # label do pod
-  type: NodePort # tipo de service
-  ports:
-    - protocol: TCP # protocolo do container
-      port: 80 # porta do container onde o service deve apontar
-      nodePort: 30080 # ao criar um novo service, o nodePort deve ser adionado +1
+    containers:
+        - name: pod-ngx
+          image: nginx:latest
+          ports:
+              - name: http
+                containerPort: 80
+                hostPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: svc-ngx
+    namespace: devpods
+spec:
+    selector:
+        app.kubernetes.io/name: ngx-app
+    type: NodePort
+    ports:
+        - protocol: TCP
+          port: 80
+          nodePort: 30080

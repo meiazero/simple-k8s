@@ -44,7 +44,7 @@ dir:
 	@echo "+ $(MKDIR) /etc/apt/keyrings/"
 	@sudo mkdir -p /etc/apt/keyrings/ 
 	
-files: pod_file deploy_file web_dir
+files: pod_file deploy_file
 
 pod_file: 
 	@if test ! $(shell ls $(DIR)/container/ | grep -i pod | cut -d '-' -f1); then \
@@ -62,13 +62,6 @@ deploy_file:
 		echo "+ deploy file already copied"; \
 	fi
 
-web_dir:
-	@if test ! $(shell ls $(DIR)/container/ | grep web); then \
-		echo "+ $(CPR) configs/web/ $(DIR)/container/" ; \
-		$(CPR) configs/web/ $(DIR)/container/ ; \
-	else \
-		echo "+ web dir already copied"; \
-	fi
 microk8s:
 	@if test !  $(shell ls /snap/bin | grep -i microk8s | cut -d '.' -f3 | tr -d '[:space:]'); then \
 		echo "+ sudo snap install microk8s --classic > /dev/null" ; \
