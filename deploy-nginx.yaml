@@ -18,13 +18,16 @@ spec:
             containers:
                 - name: deploy-ngx
                   image: nginx:latest
-                  resources:
-                      limits:
-                          cpu: 700m # 70% of a single CPU core
-                      requests:
-                          cpu: 500m # 50% of a single CPU core
                   ports:
                       - containerPort: 80
+                  volumeMounts:
+                      - name: nginx-html
+                        mountPath: "/usr/share/nginx/html/"
+            volumes:
+                - name: nginx-html
+                  hostPath:
+                      path: "/home/emanuel/container/web"
+
 ---
 apiVersion: v1
 kind: Service
@@ -40,4 +43,4 @@ spec:
           port: 4000
           targetPort: 80
     externalIPs:
-        - 192.168.1.6
+    - 10.0.1.106
