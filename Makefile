@@ -274,14 +274,14 @@ grafana_key:
 	fi
 
 docker: 
-	@echo "+ sudo $(MPKG) install -y -qq docker.io > /dev/null"
-	sudo $(MPKG) install -y -qq docker.io > /dev/null
+	@echo "+ curl -fsSL get.docker.com | sh"
+	curl -fsSL get.docker.com | sh
 	@echo "+ sudo systemctl enable docker"
 	sudo systemctl enable docker
 	@echo "+ sudo systemctl start docker"
 	sudo systemctl start docker
 
-kubernetes: install_k8s
+kubernetes: docker install_k8s
 	@echo "+ sudo apt-mark hold kubeadm kubelet kubectl"
 	@sudo apt-mark hold kubeadm kubelet kubectl >/dev/null
 
