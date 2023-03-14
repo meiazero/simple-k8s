@@ -6,13 +6,13 @@ metadata:
 apiVersion: v1
 kind: Pod
 metadata:
-    name: pod-ngx
+    name: pod-nginx
     namespace: devpods
     labels:
-        app.kubernetes.io/app: ngx-app
+        app.kubernetes.io/app: nginx-app
 spec:
     containers:
-        - name: pod-ngx
+        - name: pod-nginx
           image: nginx:latest
           ports:
               - name: http
@@ -22,11 +22,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-    name: svc-ngx
+    name: svc-nginx
     namespace: devpods
 spec:
     selector:
-        app.kubernetes.io/name: ngx-app
+        app.kubernetes.io/name: nginx-app
     type: NodePort
     ports:
         - protocol: TCP
