@@ -148,12 +148,12 @@ check_prom_bin:
 
 prom_configs: 
 	@if test ! $(shell ls $(PROM_ETC)/ | grep -i $(PROM)); then \
-		echo "+ sudo $(CP) configs/prometheus.yml $(PROM_ETC)/" ; \
-		sudo $(CP) configs/prometheus.yml $(PROM_ETC)/ ; \
+		echo "+ sudo $(CP) configs/prometheus.yaml $(PROM_ETC)/" ; \
+		sudo $(CP) configs/prometheus.yaml $(PROM_ETC)/ ; \
 		echo "+ sudo $(CP) configs/alert.rules $(PROM_ETC)/" ; \
 		sudo $(CP) configs/alert.rules $(PROM_ETC)/ ; \
-		echo "+ sudo chown $(PROM):$(PROM) $(PROM_ETC)/prometheus.yml" ; \
-		sudo chown $(PROM):$(PROM) $(PROM_ETC)/prometheus.yml ; \
+		echo "+ sudo chown $(PROM):$(PROM) $(PROM_ETC)/prometheus.yaml" ; \
+		sudo chown $(PROM):$(PROM) $(PROM_ETC)/prometheus.yaml ; \
 		echo "+ sudo chown $(PROM):$(PROM) $(PROM_ETC)/alert.rules" ; \
 		sudo chown $(PROM):$(PROM) $(PROM_ETC)/alert.rules ; \
 	else \
@@ -311,7 +311,7 @@ kubernetes_add_repo:
 clear: prom_clear expo_clear
 
 prom_clear:
-	@if test $(shell ls | grep -i $(PROM)); then \
+	@if ! test $(shell ls | grep -i $(PROM)); then \
 		echo "+ $(RM) $(PROM) $(PROM_COMPRESSED)" ; \
 		$(RM) $(PROM) $(PROM_COMPRESSED) ; \
 	else \
@@ -319,7 +319,7 @@ prom_clear:
 	fi
 	
 expo_clear:
-	@if test $(shell ls | grep -i $(EXPO)); then \
+	@if ! test $(shell ls | grep -i $(EXPO)); then \
 		echo "+ $(RM) $(EXPO) $(EXPO_COMPRESSED)" ; \
 		$(RM) $(EXPO) $(EXPO_COMPRESSED) ; \
 	else \
